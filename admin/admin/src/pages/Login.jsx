@@ -23,8 +23,9 @@ const Login = () => {
 
         console.log(data)
         if (data.success) {  
-          localStorage.setItem('atoken', data.token);
-          setAToken(data.token);
+          localStorage.setItem('atoken', data.token)
+          console.log(data.token)
+          setAToken(data.token)
 
         } else {
           toast.error(data.message)
@@ -37,6 +38,7 @@ const Login = () => {
           if(data.success){
             localStorage.setItem('cToken', data.token)
             setCToken(data.token) 
+            console.log(data.token)
             toast.success('Login Successful')
         } else{
           toast.error(data.message)

@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken'
 
 const authAdmin = async (req, res, next) =>{
     try {
-        // const {atoken} = req.headers.authorization
+        
         const {atoken} = req.headers
 
         if(!atoken){
@@ -16,7 +16,7 @@ const authAdmin = async (req, res, next) =>{
             return res.json({success: false, message: 'Not authorised. Login again'})
 
         }
-        // req.userId = token_decode.userId
+
         next()
 
     } catch (error) {

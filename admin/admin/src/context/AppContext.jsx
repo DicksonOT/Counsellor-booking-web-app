@@ -1,49 +1,65 @@
 import { createContext } from "react";
 
+export const AppContext = createContext();
 
-export const AppContext = createContext()
+const AppContextProvider = (props) => {
+  const months = [
+    "",
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  const currency = "$";
+  const calculateAge = (dob) => {
+    if (!dob) return "N/A";
 
-const AppContextProvider = (props) =>{
-    const months = ['','Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-    const currency= '$'
-    const calculateAge = (dob) => {
-        if (!dob) return 'N/A';
+    // Basic cleanup for common formatting issues
+    const cleanedDob = dob
+      .replace(/(\d+)(st|nd|rd|th)/, "$1")
+      .replace(/,/g, "")
+      .trim();
 
-        // Basic cleanup for common formatting issues
-        const cleanedDob = dob.replace(/(\d+)(st|nd|rd|th)/, '$1')
-                        .replace(/,/g, '')
-                        .trim()
+    const birthDate = new Date(cleanedDob);
+    if (isNaN(birthDate)) return "N/A";
 
-        const birthDate = new Date(cleanedDob)
-        if (isNaN(birthDate)) return 'N/A'
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
 
-        const today = new Date()
-        let age = today.getFullYear() - birthDate.getFullYear()
+    const hasBirthdayPassed =
+      today.getMonth() > birthDate.getMonth() ||
+      (today.getMonth() === birthDate.getMonth() &&
+        today.getDate() >= birthDate.getDate());
 
-        const hasBirthdayPassed =
-        today.getMonth() > birthDate.getMonth() ||
-        (today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate())
+    if (!hasBirthdayPassed) age--;
 
-        if (!hasBirthdayPassed) age--
-
-        return age
-    }
+    return age;
+  };
 
   const formattedDate = (slotDate) => {
-    const dateArray = slotDate.split('_')
-
-    return dateArray[0]+' '+ months[Number(dateArray[1])]+' '+dateArray[2]
-  }
-    const value = {
-     calculateAge, formattedDate, currency
-
-    }
+    const dateArray = slotDate.split("_");
 
     return (
-        <AppContext.Provider value={value}>
-            {props.children}
-        </AppContext.Provider>
-    )
-}
+      dateArray[0] + " " + months[Number(dateArray[1])] + " " + dateArray[2]
+    );
+  };
+  const value = {
+    calculateAge,
+    formattedDate,
+    currency,
+  };
 
-export default AppContextProvider
+  return (
+    <AppContext.Provider value={value}>{props.children}</AppContext.Provider>
+  );
+};
+
+export default AppContextProvider;

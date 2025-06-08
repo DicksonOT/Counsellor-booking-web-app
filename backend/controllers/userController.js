@@ -75,7 +75,7 @@ const userLogin = async (req, res) =>{
 
 // API for user profile
 const userInfo = async (req, res) => {
-      try {
+    try {
       const userId = req.userId
       const userData = await userModel.findById(userId).select('-password')
       res.json({ success: true, userData })
@@ -165,7 +165,7 @@ const bookAppointment = async (req, res) => {
     }
 } 
 
-// API toget user appointments
+// API to get user appointments
 const listAppointments = async (req, res) => {
     try {
         const userId = req.userId

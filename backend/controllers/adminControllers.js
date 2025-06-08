@@ -9,10 +9,6 @@ import userModel from '../models/userModel.js'
 //API for adding counsellor 
 const addCounsellor = async (req, res) => {
     try {
-        // const user = await finduser(req.userId)
-        // (if user.role !== admin){
-        //     throw new Error("User must be an admin")
-        // }
         
      const {name, email, password, specialty, degree, experience, about, fees, location} = req.body
      const imageFile = req.file
@@ -99,6 +95,20 @@ const allCounsellors = async (req, res) => {
         
     }
 }
+// API for changing counsellor availability
+const changeAvailability = async (req, res) => {
+    try {
+        const {counId} = req.body
+        const counData = await counsellorModel.findById(counId)
+        await counsellorModel.findByIdAndUpdate(counId, {available: !counData.available})
+
+        res.json({success: true, message: 'Availability Changed'})
+
+    } catch (error) {
+        console.log(error.message)
+        res.json({success:false, message: error.message})
+    }
+}
 
 // API for getting all appointments
 const getAllAppointments = async (req,res) => {
@@ -122,7 +132,7 @@ const adminDashboard = async (req, res) => {
             counsellors: counsellors.length,
             appointments: appointments.length,
             users: users.length,
-            lastestAppointments: appointments.reverse().slice(0,5)
+            latestAppointments: appointments.reverse().slice(0,5)
         }
     
         res.json({success: true, dashboardData})
@@ -131,6 +141,6 @@ const adminDashboard = async (req, res) => {
         res.json({success: false, message: error.message})
     }
 }
-export {addCounsellor, loginAdmin, allCounsellors, getAllAppointments, adminDashboard}
+export {addCounsellor, loginAdmin, allCounsellors, getAllAppointments, adminDashboard, changeAvailability}
 
 

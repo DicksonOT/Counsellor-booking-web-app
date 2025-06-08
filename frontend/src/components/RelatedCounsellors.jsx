@@ -29,7 +29,7 @@ const RelatedCounsellors = ({ specialty, counId }) => {
         <div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pt-5 gap-y-6 px-3 sm:px-0">
           {relCoun.slice(0, 5).map((item) => (
             <div
-              onClick={() => {navigate(`/appointment/${item._id}`); scrollTo(0,0) }}
+              onClick={() => {navigate(`/appointment/${item._id}`); window.scrollTo(0,0) }}
               className="border border-blue-200 rounded-xl overflow-hidden cursor-pointer hover:translate-y-[-10px] transition-all duration-500 bg-blue-50"
             >
               <img className="h-40 " src={item.image} alt="" />

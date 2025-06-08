@@ -1,15 +1,17 @@
-import React from "react";
+import React, { useContext } from "react";
+import { AppContext } from "../context/AppContext";
 
 const Info = () => {
+  const {counsellors} = useContext(AppContext)
   return (
-    <div>
-      <div className="relaive lg:h-90 w-full rounded-lg px-5 grid grid-cols-2 gap-2 bg-cover bg-center ">
+    <div className="bg-white">
+      <div className="relative lg:h-90 w-full rounded-lg px-5 grid grid-cols-1 md:grid-cols-2 gap-8 bg-white">
         <div>
           <p className="text-xl md:text-2xl lg:text-3xl font-bold leading-tight md:leading-tight lg:leading-tight pt-10">
             Our vision
-            <hr class="border-t-2 border-blue-400 my-4 w-15" />
+            <hr className="border-t-2 border-blue-400 my-4 w-16" />
           </p>
-          <p>
+          <p className="text-gray-700 leading-relaxed">
             Our vision is to revolutionize mental health support by providing
             accessible, affordable, and compassionate care to individuals
             worldwide. We aim to bridge the gap to timely and effective support
@@ -27,30 +29,59 @@ const Info = () => {
         <div>
           <p className="text-xl md:text-2xl lg:text-3xl font-bold leading-tight md:leading-tight lg:leading-tight pt-10">
             What We Do
-            <hr class="border-t-2 border-blue-400 my-4 w-15" />
+            <hr className="border-t-2 border-blue-400 my-4 w-16" />
           </p>
-          <p>
+          <p className="text-gray-700 leading-relaxed mb-4">
             We provide a safe, supportive and non-judgmental space for
             individuals to access mental health support, whenever and wherever
             they need it.
           </p>
-          <oll>
-            <li>
-              AI-Powered Chatbot: Our innovative chatbot uses natural language
-              processsing to offer empathetic listening, personalized coping
-              strategies and emotional support.
+          <ul className="space-y-3 text-gray-700">
+            <li className="flex items-start">
+              <span className="w-2 h-2 bg-blue-400 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+              <span>
+                <strong>AI-Powered Chatbot:</strong> Our innovative chatbot uses natural language
+                processing to offer empathetic listening, personalized coping
+                strategies and emotional support.
+              </span>
             </li>
-            <li>
-              Personalized Resources: We connect users wich relevant resources,
-              including local therapists and mental health professionals.
+            <li className="flex items-start">
+              <span className="w-2 h-2 bg-blue-400 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+              <span>
+                <strong>Personalized Resources:</strong> We connect users with relevant resources,
+                including local therapists and mental health professionals.
+              </span>
             </li>
-
-            <li>
-              Mental Health Tools: Our platform provides access to a range of
-              mental health tools, including mood-tracking, mindfulness
-              exercises and stress-management techniques.
+            <li className="flex items-start">
+              <span className="w-2 h-2 bg-blue-400 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+              <span>
+                <strong>Mental Health Tools:</strong> Our platform provides access to a range of
+                mental health tools, including mood-tracking, mindfulness
+                exercises and stress-management techniques.
+              </span>
             </li>
-          </oll>
+          </ul>
+        </div>
+      </div>
+            {/* Stats Bar */}
+      <div className="bg-blue-100 py-12 px-5 mt-5">
+        <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+          <div>
+            <div className="text-3xl md:text-4xl font-bold text-blue-600 mb-2">10K+</div>
+            <div className="text-gray-600 text-sm md:text-base">Users Supported</div>
+          </div>
+          <div>
+            <div className="text-3xl md:text-4xl font-bold text-blue-600 mb-2">24/7</div>
+            <div className="text-gray-600 text-sm md:text-base">Available Support</div>
+          </div>
+          <div>
+            <div className="text-3xl md:text-4xl font-bold text-blue-600 mb-2">95%</div>
+            <div className="text-gray-600 text-sm md:text-base">User Satisfaction</div>
+          </div>
+          <div>
+            <div className="text-3xl md:text-4xl font-bold text-blue-600 mb-2">{counsellors.length}</div>
+            <div className="text-gray-600 text-sm md:text-base">Partner Therapists</div>
+          </div>
         </div>
       </div>
     </div>

@@ -12,7 +12,7 @@ const CounsellorsList = () => {
   
   return (
     <div className='m-5 max-h-[90vh] overflow-y-scroll'>
-      <h1 className='text-lg font-medium'>All Counsellors</h1>
+      <h1 className='text-lg font-semibold mb-5'>All Counsellors</h1>
 
       <div className="w-full grid grid-cols-5 gap-4 gap-y-6">
           {counsellors.map((item, index) => (

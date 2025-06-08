@@ -19,7 +19,7 @@ const home = () => {
           navigate("/about");
           scrollTo(0, 0);
         }}
-        className="flex items-center px-5 py-3 rounded-full text-gray-800 text-sm hover:scale-105 transition-all bg-blue-200 cursor-pointer"
+        className="flex items-center px-5 py-3 rounded-full text-gray-800 text-sm hover:scale-105 transition-all bg-blue-200 cursor-pointer m-5"
       >
         Read More 
         <img src={assets.arrow_icon} alt="" className="ml-2 w-4" />

@@ -50,21 +50,21 @@ const AppointmentPage = () => {
         minute: "2-digit",
       });
 
-      let day = currentDate.getDate();
+      let day = currentDate.getDate()
       let month = currentDate.getMonth() + 1;
-      let year = currentDate.getFullYear();
-      const slotDate = `${day}_${month}_${year}`;
+      let year = currentDate.getFullYear()
+      const slotDate = `${day}_${month}_${year}`
 
-      const isBooked = counInfo.slots_booked?.[slotDate]?.includes(slotTimeStr);
+      const isBooked = counInfo.slots_booked?.[slotDate]?.includes(slotTimeStr)
 
       if (!isBooked) {
         timeSlots.push({
           datetime: new Date(currentDate),
           time: slotTimeStr,
-        });
+        })
       }
 
-      currentDate.setMinutes(currentDate.getMinutes() + 30);
+      currentDate.setMinutes(currentDate.getMinutes() + 30)
     }
 
     slots.push(timeSlots);
@@ -112,7 +112,7 @@ const AppointmentPage = () => {
   if (!counInfo) return <div className="p-4">Loading counsellor information...</div>;
 
   return (
-    <div className="px-4 sm:px-6 pb-8">
+    <div className="pb-8 mx-5 mt-19">
       {/* Counsellor Details */}
       <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
         <div className="sm:w-80 flex-shrink-0">
@@ -123,7 +123,7 @@ const AppointmentPage = () => {
           />
         </div>
 
-        <div className="border border-blue-300 rounded-lg p-6 bg-white sm:mt-0 -mt-16 sm:-ml-0 relative z-10">
+        <div className="border border-blue-300 rounded-lg p-6 bg-white sm:mt-0 mt-16 sm:-ml-0 relative z-10 w-full">
           <div className="flex items-start gap-3">
             <div className="flex-1">
               <div className="flex items-center gap-2 pt-8">
@@ -203,7 +203,7 @@ const AppointmentPage = () => {
         </div>
 
         <button
-          onClick={bookAppointment}
+          onClick={()=> {bookAppointment(); window.scrollTo(0,0)}}
           disabled={!slotTime}
           className={`mt-6 px-8 py-2 rounded-full text-white text-sm font-medium ${
             slotTime ? "bg-blue-500 hover:bg-blue-600" : "bg-gray-400 cursor-not-allowed"

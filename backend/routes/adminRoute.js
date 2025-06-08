@@ -1,8 +1,8 @@
 import express from 'express';
-import { addCounsellor, adminDashboard, allCounsellors, getAllAppointments, loginAdmin } from '../controllers/adminControllers.js';
+import { addCounsellor, adminDashboard, allCounsellors, changeAvailability, getAllAppointments, loginAdmin } from '../controllers/adminControllers.js';
 import upload from '../middlewares/multer.js';
 import authAdmin from '../middlewares/authAdmin.js';
-import { changeAvailability } from '../controllers/counsellorController.js';
+
 
 const adminRouter = express.Router();
 

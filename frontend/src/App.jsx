@@ -18,7 +18,7 @@ const App = () => {
   const showNavbarFooter = location.pathname !== "/login"
 
   return (
-    <div className="mx-4 sm:mx-[2.5%]">
+    <div className="mt-16">
     {showNavbarFooter && <Navbar />}
       <ToastContainer />
       <Routes>

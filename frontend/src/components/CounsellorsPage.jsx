@@ -23,8 +23,8 @@ const CounsellorsPage = () => {
     applyFilter();
   }, [counsellors, specialty]);
   return (
-    <div>
-      <p className="text-gray-600">
+    <div className="mx-5">
+      <p className="text-gray-600 mt-25">
         Browse through the counsellors speacialist
       </p>
       <div className="flex flex-col sm:flex-row items-start gap-5 mt-5">

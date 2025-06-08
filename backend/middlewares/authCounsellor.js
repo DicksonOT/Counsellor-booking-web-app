@@ -1,20 +1,22 @@
 import jwt from "jsonwebtoken";
 
 const authCounsellor = async (req, res, next) => {
-  try {
-    const token = req.headers
-
-    if(!token){
-      return res.json({success: false, message: 'Unauthorised login'})
-    }
-
-    const decodedToken = jwt.verify(token, process.env.JWT_SECRET)
-    counId.req = decodedToken._id
-
-    next()
-  } catch (error) {
-    return res.json({message:error.message})
-  }
-};
+   try {
+  
+          const {ctoken} = req.headers
+          
+          if(!ctoken){
+              return res.json({success: false, message: "Not authorised. Log in"})
+          } 
+  
+          const decodedToken = jwt.verify(ctoken, process.env.JWT_SECRET)
+          
+          req.counId = decodedToken._id 
+          next()
+      } catch (error) {
+          console.log(error)
+          res.json({success:false, message: error.message})
+      }
+}
 
 export default authCounsellor

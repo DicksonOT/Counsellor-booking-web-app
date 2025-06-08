@@ -1,6 +1,5 @@
 import React from "react";
 import { useContext } from "react";
-import { use } from "react";
 import { AdminContext } from "../../context/AdminContext";
 import { useEffect } from "react";
 import { AppContext } from "../../context/AppContext";
@@ -14,10 +13,10 @@ const AppointmentData = () => {
       getAllAppointments();
     }
   }, [aToken]);
-  console.log(appointments.userData);
+
   return (
-    <div className="w-full max-w-6xl m-5">
-      <p className="mb-3 text-lg font-medium">All Appointments</p>
+    <div className="max-w-6xl m-5">
+      <p className="mb-3 text-lg font-semibold">All Appointments</p>
 
       <div className="bg-white border rounded text-sm max-h-[90vh] min-h-[60vh] overflow-x-scroll">
         <div className="hidden sm:grid grid-cols-[0.5fr_3fr_1fr_3fr_3fr_1fr_1fr] grid-flow-col py-3 px-6 border-b">
@@ -72,7 +71,9 @@ const AppointmentData = () => {
               {
                 item.cancelled 
                 ? <p className="text-red-400 text-xs font-medium">Cancelled</p>
-                : <p>...</p>
+                : item.isCompleted
+                ? <p className="text-green-400 text-xs font-medium">Completed</p>
+                :<p className="text-blue-400 text-xs font-medium">Pending</p>
               } 
             </div>
           </div>

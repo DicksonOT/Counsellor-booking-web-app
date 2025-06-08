@@ -103,6 +103,9 @@ const MyAppointment = () => {
 
   return (
     <div>
+    {appointments.length == 0 
+    ? <p className='text-red-200 text-medium items-center'>'You do not have any appointment❗️</p>
+  : <div className='mx-5 mt-19'>
       <p className='pb-3 mt-10 font-medium text-zinc-700 border-b'>My Appointments</p>
       <div>
         { appointments.slice(0, seeMoreValue).map((item, index)=>(
@@ -122,10 +125,11 @@ const MyAppointment = () => {
             <div></div>
             <div className='flex flex-col gap-2 justify-center'>
 
-              {!item.cancelled && item.payment && <button className='sm:min-w-48 py-2 border rounded text-stone-500 bg-indigo-50'>Paid</button> }
-              {!item.cancelled && !item.payment && <button  onClick={()=>appointmentStripePay(item._id)} className='text-sm text-stone-500 text-center sm:min-w-48 py-2 border rounded-lg hover:bg-blue-300 hover:text-white  transition-all duration-300'> Pay Online </button>}
-              {!item.cancelled && <button onClick={()=> cancelAppointment(item._id)} className='text-sm text-stone-500 text-center sm:min-w-48 py-2 border rounded-lg hover:bg-red-500 hover:text-white  transition-all duration-300'> Cancel Appointment </button>}
-              {item.cancelled && <button className='sm:min-w-48 py-2 border-red-500 rounded text-red-500'>Appointment Cancelled</button>}
+              {!item.cancelled && item.payment && !item.isCompleted && <button className='sm:min-w-48 py-2 border rounded text-stone-500 bg-indigo-50'>Paid</button> }
+              {!item.cancelled && !item.payment && !item.isCompleted && <button  onClick={()=>appointmentStripePay(item._id)} className='text-sm text-stone-500 text-center sm:min-w-48 py-2 border rounded-lg hover:bg-blue-300 hover:text-white  transition-all duration-300'> Pay Online </button>}
+              {!item.cancelled && !item.isCompleted && <button onClick={()=> cancelAppointment(item._id)} className='text-sm text-stone-500 text-center sm:min-w-48 py-2 border rounded-lg hover:bg-red-500 hover:text-white  transition-all duration-300'> Cancel Appointment </button>}
+              {item.cancelled && !item.isCompleted && <button className='sm:min-w-48 py-2 border-red-500 rounded text-red-500'>Appointment Cancelled</button>}
+              {item.isCompleted && <button className='sm:min-w-48 py-2 rounded text-green-500'>Appointment Completed</button>}
             </div>
           </div>
         ))}
@@ -134,6 +138,8 @@ const MyAppointment = () => {
         <div className='flex justify-center'>
           {seeMore ? <button onClick={()=> {setSeeMore(false); setSeeMoreValue(3)}} className='bg-blue-500 text-white text-base rounded-full py-2 px-10 mt-10 cursor-pointer'>Show less</button> : <button onClick={()=> {setSeeMore(true); setSeeMoreValue(10)}} className='bg-blue-500 text-white text-base rounded-full py-2 px-10 mt-10 cursor-pointer'>Show More</button>}
         </div>
+    </div>}
+    
     </div>
   )
 }
