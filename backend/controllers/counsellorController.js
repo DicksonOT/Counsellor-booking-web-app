@@ -156,7 +156,7 @@ const dashBoard = async(req, res) => {
 
         appointments.map((item)=>{
             if(item.isCompleted || item.payment) {
-                earnings += item.amount - 0.1*item.amount
+                earnings += Math.floor(item.amount - 0.1*item.amount)
             }
         })
          

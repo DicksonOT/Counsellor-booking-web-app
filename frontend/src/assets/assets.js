@@ -106,7 +106,6 @@ import Drugs from './Drugs.svg'
 import Mental from './Mental.svg'
 import Career from './Career.svg'
 import linkedin from './linkedin.svg'
-import github from './github.svg'
 
 export const assets = {
     appointment_img,
@@ -136,9 +135,7 @@ export const assets = {
     bot,
     vic,
     linkedin,
-    github,
     welcomeVid
-
 }
 
 export const SpecialtyData = [
@@ -174,14 +171,13 @@ export const team = [
         name: "Mrs. Victoria De-Graft Adjei",
         image: vic,
         about: "Mrs. Victoria is a Counselling Psychologist with varied experience in career guidance/development, educational/academic counselling, job placement and vocational counselling. She is a Senior Assistant Registrar/Senior Counsellor in the KNUST Counselling Center (KCC). She holds a bachelor's degree in Psychology from the University of Cape Coast and master's degrees in Health Education & Promotion and Guidance & Counselling from KNUST and University of Cape Coast respectively, all in Ghana.",
-        github: "https://linkedin.com/in/victoria-degraft-adjei" // Professional profile link
+        linkedin: "https://linkedin.com/in/victoria-degraft-adjei" 
     },
     {
         id: 2,
         name: "Osei Tutu Dickson",
         image: profile_pic,
         about: "Dickson, our Lead Developer, passionately builds and enhances our platform daily to perfectly support counsellors and clients, combining cutting-edge technology with his deep commitment to mental health accessibility. His technical expertise ensures our members enjoy seamless, exceptional experiences while his genuine care for mental wellness drives every innovation—because he believes great technology should make quality care more empowering and available to all at anytime.",
-        github: "https://github.com/dicksontutu",
         linkedin: "https://linkedin.com/in/osei-tutu-dickson"
     },
     {
@@ -189,7 +185,6 @@ export const team = [
         name: "Elorm Ahanogbe",
         image: coun16,
         about: "Elorm, our Software Engineer, provides steady support in maintaining and optimizing our platform's core systems. With a meticulous approach to troubleshooting and system stability, he helps ensure our technical infrastructure runs smoothly behind the scenes. While working with the team, Elorm focuses on incremental improvements that collectively enhance our platform's reliability and performance over time",
-        github: "https://github.com/elormahanogbe",
         linkedin: "https://linkedin.com/in/elorm-ahanogbe"
     },
 ]

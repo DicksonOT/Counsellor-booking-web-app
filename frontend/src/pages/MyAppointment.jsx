@@ -71,7 +71,6 @@ const MyAppointment = () => {
     }
   };
 
-  // PAYMENT VERIFICATION
   const verifyPayment = async () => {
       try {
         const { data } = await axios.post(`${backendUrl}/api/user/verify-payment`, {sessionId})

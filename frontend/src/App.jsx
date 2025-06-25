@@ -12,6 +12,7 @@ import CounsellorsSpecialty from "./components/CounsellorsSpecialty";
 import Footer from "./components/Footer";
 import LoginPage from "./pages/LoginPage";
 import { ToastContainer, toast } from 'react-toastify';
+import Chatbot from "./components/Bot";
 
 const App = () => {
   const location = useLocation();
@@ -27,13 +28,11 @@ const App = () => {
         <Route path="/speciality" element={<Specialty />} />
         <Route path="/about" element={<About />} />
         <Route path="/my-profile" element={<Profile />} />
-        <Route
-          path="/counsellors/:specialty"
-          element={<CounsellorsSpecialty />}
-        />
+        <Route path="/counsellors/:specialty" element={<CounsellorsSpecialty />} />
         <Route path="/my-appointment" element={<MyAppointment />} />
         <Route path="/appointment/:counId" element={<Appointment />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/bot" element={<Chatbot />} />
       </Routes>
       {showNavbarFooter && <Footer />}
     </div>

@@ -18,7 +18,7 @@ const AppContextProvider = (props) => {
     "Nov",
     "Dec",
   ];
-  const currency = "$";
+  const currency = "GH₵";
   const calculateAge = (dob) => {
     if (!dob) return "N/A";
 

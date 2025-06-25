@@ -67,17 +67,6 @@ const OurTeam = () => {
                     <img className="w-5 h-5" src={assets.linkedin} alt="LinkedIn" />
                   </button>
                 )}
-
-                {/* GitHub - Show for members who have github (developers) */}
-                {member.github && (
-                  <button
-                    onClick={() => handleLinkClick(member.github)}
-                    className="w-10 h-10 bg-gray-100 hover:bg-gray-800 rounded-full flex items-center justify-center transition-all duration-300 group/btn hover:scale-110"
-                    aria-label={`${member.name}'s GitHub profile`}
-                  >
-                    <img className="w-5 h-5" src={assets.github} alt="GitHub" />
-                  </button>
-                )}
               </div>
             </div>
           </div>

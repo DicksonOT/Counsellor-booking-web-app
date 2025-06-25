@@ -15,7 +15,7 @@ const AppContextProvider = (props) => {
 
 
     const backendUrl = import.meta.env.VITE_BACKEND_URL
-    const currencySymbol= '$'
+    const currencySymbol= 'GH₵ '
 
     const getUserInfo = async () =>{
         try {

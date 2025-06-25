@@ -7,7 +7,6 @@ const Header = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const fullText = "Quiet Place,";
   
-  // Memoized typing effect to prevent unnecessary re-renders
   const typeAndDelete = useCallback(() => {
     let index = 0;
     setIsDeleting(false);
@@ -20,12 +19,10 @@ const Header = () => {
       } else {
         clearInterval(typingInterval);
         
-        // Wait 7 seconds before starting to delete
         setTimeout(() => {
           setIsDeleting(true);
           let deleteIndex = fullText.length;
-          
-          // Deleting phase
+
           const deletingInterval = setInterval(() => {
             if (deleteIndex >= 0) {
               setTypedText(fullText.slice(0, deleteIndex));
@@ -34,7 +31,6 @@ const Header = () => {
               clearInterval(deletingInterval);
               setIsDeleting(false);
               
-              // Wait before starting to type again
               setTimeout(() => {
                 typeAndDelete();
               }, 500);
@@ -45,19 +41,15 @@ const Header = () => {
     }, 150);
   }, [fullText]);
 
-  // Typing and deleting effect
   useEffect(() => {
-    // Check if user prefers reduced motion
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     
     if (!prefersReducedMotion) {
       typeAndDelete();
     } else {
-      // For users who prefer reduced motion, just show the full text
       setTypedText(fullText);
     }
 
-    // Cleanup function
     return () => {
       setTypedText("");
     };
@@ -77,11 +69,9 @@ const Header = () => {
         >
           <source src={assets.welcomeVid} type="video/mp4"/>
         </video>
-        
-        {/* Dark overlay */}
+
         <div className="absolute inset-0 bg-black opacity-10 rounded-lg"></div>
         
-        {/* Content */}
         <div className="absolute inset-0 z-10 flex items-center">
           <div className="ml-4 md:ml-8 lg:ml-12 text-white max-w-2xl">
             <div className="mb-6">
@@ -112,7 +102,7 @@ const Header = () => {
               </div>
               
               <a
-                href="/login"
+                href="/bot"
                 className="inline-flex items-center px-6 py-3 rounded-full text-blue-600 text-base font-medium mt-6 hover:scale-105 transition-all duration-200 bg-white shadow-lg hover:shadow-xl max-w-fit"
                 role="button"
                 aria-label="Get mental health support"

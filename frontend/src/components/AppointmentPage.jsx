@@ -156,6 +156,13 @@ const AppointmentPage = () => {
               {counInfo.fees}
             </span>
           </p>
+          <div className="pt-3">
+          {
+            counInfo.available
+            ? <p className="text-base text-blue-500">🔵 Available</p> 
+            : <p className="text-base text-red-500">🔴 Not Available</p>
+          }
+          </div>
         </div>
       </div>
 
