@@ -15,6 +15,10 @@ const AppContextProvider = (props) => {
 
 
     const backendUrl = import.meta.env.VITE_BACKEND_URL
+    const service_id = import.meta.env.VITE_SERVICE_ID
+    const template_id = import.meta.env.VITE_TEMPLATE_ID
+    const public_key = import.meta.env.VITE_PUBLIC_KEY
+
     const currencySymbol= 'GH₵ '
 
     const getUserInfo = async () =>{
@@ -50,7 +54,7 @@ const AppContextProvider = (props) => {
     }
 
     const value =  { 
-        counsellors, currencySymbol, reviews, backendUrl, setToken, token, team, userData, setUserData, getUserInfo, getCounsellors
+        counsellors, currencySymbol, reviews, backendUrl, setToken, token, team, userData, setUserData, getUserInfo, getCounsellors, service_id, template_id, public_key
     }
     
     useEffect(()=>{

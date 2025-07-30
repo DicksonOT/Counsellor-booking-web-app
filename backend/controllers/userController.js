@@ -5,6 +5,7 @@ import userModel from '../models/userModel.js'
 import jwt from 'jsonwebtoken'
 import counsellorModel from '../models/counsellorModel.js'
 import appointmentModel from '../models/appointmentModel.js'
+import assessmentModel from '../models/assessmentModel.js'
 import Stripe from 'stripe'
 
 
@@ -310,4 +311,57 @@ const verifyPayment = async (req, res) => {
   }
 }
 
-export {registerUser, userLogin, userInfo, updateProfile, bookAppointment, listAppointments, cancelAppointment, paymentStripe, StripeWebhook, verifyPayment }
+
+// API for chatbotVisit assessment
+const chatbotVisit = async (req, res) => {
+  const userId = req.userId;
+
+  try {
+    const updatedAssessment = await Assessment.findOneAndUpdate(
+      { userId },{ $inc: { totalScore: 2 }, $push: { scoreHistory: { score: 2, source: 'chatbot', date: new Date() }}},
+      { new: true, upsert: true }
+    );
+
+    res.json({ success: true, message: 'Chatbot visit recorded', totalScore: updatedAssessment.totalScore, });
+  } catch (error) {
+    res.json({ message: 'Error logging chatbot visit'});
+    console.log( error.message)
+  }
+};
+
+// API for When user speaks to a counselor (auto +10)
+const spokeToCounselor = async (req, res) => {
+  const userId = req.userId;
+  const { counId } = req.body;
+
+  try {
+    const updatedAssessment = await Assessment.findOneAndUpdate( { userId }, { $inc: { totalScore: 10 }, $push: { scoreHistory: { score: 10, source: 'counselor', counId, date: new Date()}}},
+      { new: true, upsert: true }
+    );
+
+    res.json({ success: true, message: 'Counselor session recorded', totalScore: updatedAssessment.totalScore});
+  } catch (error) {
+    res.json({ message: 'Error logging counselor session'});
+    console.log( error.message)
+  }
+};
+
+// API for getting assessment data
+const getUserAssessment = async (req, res) => {
+  const userId = req.userId;
+
+  try {
+    const assessment = await assessmentModel.findOne({ userId });
+    if (!assessment) {
+      return res.json({ success: false, message: 'Assessment not found' });
+    }
+
+    res.json({ success: true, assessment });
+  } catch (error) {
+    console.log(error.message);
+    res.json({ success: false, message: 'Error retrieving assessment' });
+  }
+};
+
+
+export {registerUser, userLogin, userInfo, updateProfile, bookAppointment, listAppointments, cancelAppointment, paymentStripe, StripeWebhook, verifyPayment, spokeToCounselor, chatbotVisit, getUserAssessment }

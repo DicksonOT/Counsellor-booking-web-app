@@ -95,8 +95,6 @@ import coun69 from './coun69.png'
 import coun70 from './coun70.png'
 import coun71 from './coun71.png'
 import vic    from './vic.jpg'
-import welcomeVid from './welcome.mp4'
-
 
 
 import Family from './Family.svg'
@@ -134,8 +132,7 @@ export const assets = {
     header_img5,
     bot,
     vic,
-    linkedin,
-    welcomeVid
+    linkedin
 }
 
 export const SpecialtyData = [

@@ -11,7 +11,7 @@ import Specialty from "./pages/Specialty";
 import CounsellorsSpecialty from "./components/CounsellorsSpecialty";
 import Footer from "./components/Footer";
 import LoginPage from "./pages/LoginPage";
-import { ToastContainer, toast } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
 import Chatbot from "./components/Bot";
 
 const App = () => {

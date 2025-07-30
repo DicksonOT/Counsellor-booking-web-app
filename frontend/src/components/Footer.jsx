@@ -15,7 +15,6 @@ const Footer = () => {
               onClick={()=> {navigate('/'); scrollTo(0,0)}}
               className="mb-6 w-20 h-10 object-contain" 
               src={assets.logo} 
-              alt="BeYou Logo"
             />
             <p className="w-full md:w-2/3 text-gray-700 leading-7 text-base">
               We provide a safe, supportive and non-judgmental space for individuals to access mental health support, whenever and wherever they need it.
@@ -32,12 +31,6 @@ const Footer = () => {
                 onClick={() => {navigate ('/about'); scrollTo(0,0)}}
               >
                 About Us
-              </li>
-              <li 
-                className="hover:text-blue-600 hover:translate-x-1 transition-all duration-200 cursor-pointer"
-                onClick={() => {navigate('/about'); scrollTo(0,0)}}
-              >
-                Services
               </li>
               <li 
                 className="hover:text-blue-600 hover:translate-x-1 transition-all duration-200 cursor-pointer"
@@ -70,7 +63,7 @@ const Footer = () => {
                   rel="noopener noreferrer"
                   className="hover:underline"
                 >
-                  quietplace.support@gmail.com
+                  thequietplace.contact@gmail.com
                 </a>
               </li>
               <li className="text-gray-600">

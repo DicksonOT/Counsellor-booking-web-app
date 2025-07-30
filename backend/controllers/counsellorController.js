@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import counsellorModel from '../models/counsellorModel.js'
+import Assessment from '../models/assessmentModel.js';
 import validator from 'validator'
 import appointmentModel from '../models/appointmentModel.js'
 
@@ -125,6 +126,7 @@ const appointmentComplete = async(req, res) => {
         return res.json({success: false, messsage: error.message})
     }
 }
+
 // API for cancelling appointments
 const appointmentCancelled = async(req, res) => {
     try {
@@ -146,7 +148,7 @@ const appointmentCancelled = async(req, res) => {
     }
 }
 
-// API for admin dashboard
+// API for counsellor dashboard
 const dashBoard = async(req, res) => {
     try {
         const counId = req.counId
@@ -194,7 +196,7 @@ const profileData = async (req, res) => {
     }
 }
 
-// API for admin project
+// API for updating your profile
 const updateProfile = async (req, res) => {
     try {
         const counId = req.counId
@@ -208,4 +210,35 @@ const updateProfile = async (req, res) => {
         res.json({success: false, message: error.message}) 
     }
 }
-export {counsellorLogin,counsellorList,changeAvailability, counsellorAppointments, appointmentComplete, appointmentCancelled, dashBoard, profileData, updateProfile}
+
+// API for manually assessing users
+const manualAssessment = async (req, res) => {
+  const counId = req.counId;
+  const { userId, score } = req.body;
+
+  if (!userId || typeof score !== 'number') {
+    return res.json({ success: false, message: 'userId and score (number) are required' });
+  }
+
+  try {
+    const updatedAssessment = await Assessment.findOneAndUpdate(
+      { userId },
+      {
+        $inc: { totalScore: score },
+        $push: {
+          scoreHistory: { score, source: 'manual', counId, date: new Date() },
+        }
+      },
+     { new: true, upsert: true } 
+    );
+
+    return res.json({ success: true, message: `You scored scored with ${score} points`, totalScore: updatedAssessment.totalScore});
+  } catch (error) {
+    console.log(error);
+    return res.json({ success: false, message: error.message });
+  }
+};
+
+
+
+export {counsellorLogin,counsellorList,changeAvailability, counsellorAppointments, appointmentComplete, appointmentCancelled, dashBoard, profileData, updateProfile, manualAssessment}

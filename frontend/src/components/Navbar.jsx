@@ -69,11 +69,12 @@ const Navbar = () => {
             <div className='flex items-center gap-4'>
                 {token ? (
                     <div className='flex items-center cursor-pointer group relative'>
-                        <img 
-                            className='rounded-full w-8 h-8 object-cover border-2 border-gray-200 hover:border-blue-400 transition-colors duration-200' 
-                            src={userData.image} 
+                        <img
+                            className='rounded-full w-8 h-8 object-cover border-2 border-gray-200 hover:border-blue-400 transition-colors duration-200'
+                            src={userData?.image || assets.default_avatar}
                             alt='Profile'
                         />
+
                         <img 
                             className='p-2 w-8 h-8 group-hover:rotate-180 transition-transform duration-200' 
                             src={assets.dropdown_icon} 

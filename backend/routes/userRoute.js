@@ -1,5 +1,5 @@
 import express from 'express'
-import { bookAppointment, cancelAppointment, listAppointments, paymentStripe, registerUser, StripeWebhook, updateProfile, userInfo, userLogin, verifyPayment } from '../controllers/userController.js'
+import { bookAppointment, cancelAppointment, chatbotVisit, getUserAssessment, listAppointments, paymentStripe, registerUser, spokeToCounselor, StripeWebhook, updateProfile, userInfo, userLogin, verifyPayment } from '../controllers/userController.js'
 import authUser from '../middlewares/authUser.js'
 import upload from '../middlewares/multer.js'
 import rawBody from '../middlewares/rawBody.js'
@@ -27,5 +27,7 @@ userRouter.post ('/payment-stripe', authUser, paymentStripe)
 userRouter.post('/stripe-webhook', rawBody, StripeWebhook)
 userRouter.post('/verify-payment', verifyPayment)
 
-
+userRouter.post('/assess-chatbotVisit', authUser, chatbotVisit)
+userRouter.post('assess-SpokeToCounsellor', authUser, spokeToCounselor)
+userRouter.get('/get-assessment', authUser, getUserAssessment)
 export default userRouter

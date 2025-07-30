@@ -1,12 +1,33 @@
-import React from "react";
+import React, { useState, useEffect, useCallback, useContext } from "react";
 import { assets } from "../assets/assets";
-import { useState, useEffect, useCallback } from "react";
+import { AppContext } from "../context/AppContext";
 
 const Header = () => {
+  const {userData} = useContext(AppContext)
+  const [imageIndex, setImageIndex] = useState(0);
   const [typedText, setTypedText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const fullText = "Quiet Place,";
   
+  const names = userData.name
+  
+  const images = [
+    assets.header_img,
+    assets.header_img2,
+    assets.header_img3,
+    assets.header_img5,
+    assets.header_img1,
+    assets.header_img4
+  ];
+
+  // Image slideshow effect
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setImageIndex((prevIndex) => (prevIndex + 1) % images.length);
+    }, 10000);
+    return () => clearInterval(intervalId);
+  }, [images.length]);
+
   const typeAndDelete = useCallback(() => {
     let index = 0;
     setIsDeleting(false);
@@ -36,7 +57,7 @@ const Header = () => {
               }, 500);
             }
           }, 100);
-        }, 7000);
+        }, 5000);
       }
     }, 150);
   }, [fullText]);
@@ -57,35 +78,30 @@ const Header = () => {
 
   return (
     <div>
-      <div className="relative h-[360px] lg:h-[640px] w-full px-5">
-       
-        <video 
-          autoPlay
-          loop 
-          muted 
-          playsInline 
-          className="absolute inset-0 w-full h-full object-cover rounded-lg"
-          aria-label="Background video"
-        >
-          <source src={assets.welcomeVid} type="video/mp4"/>
-        </video>
-
-        <div className="absolute inset-0 bg-black opacity-10 rounded-lg"></div>
+      <div className="relative h-[360px] lg:h-[900px] w-full px-5">
+        <img
+          src={images[imageIndex]}
+          alt="Header background showcasing mental wellness"
+          loading="eager"
+          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out rounded-lg"
+        />
+        <div className="absolute inset-0 bg-black opacity-15 rounded-lg"></div>
         
+        {/* Content overlay */}
         <div className="absolute inset-0 z-10 flex items-center">
           <div className="ml-4 md:ml-8 lg:ml-12 text-white max-w-2xl">
             <div className="mb-6">
-              <p className="text-xl md:text-2xl lg:text-3xl font-bold leading-tight">
+              <p className="text-xl md:text-5xl lg:text-8xl font-bold leading-tight">
                 Welcome to
               </p>
-              <p className="text-2xl md:text-4xl lg:text-6xl font-bold leading-tight text-blue-400">
+              <p className="text-5xl md:text-4xl lg:text-6xl font-bold leading-tight text-blue-400">
                 {typedText}
                 <span className="animate-pulse" aria-hidden="true">|</span>
               </p>
             </div>
             
             <div className="space-y-4">
-              <p className="text-sm md:text-base lg:text-xl leading-relaxed">
+              <p className="text-sm md:text-base lg:text-3xl leading-relaxed">
                 a safe, supportive and non-judgmental space <br /> 
                 where you can take the first step towards mental wellness.
               </p>
@@ -93,8 +109,8 @@ const Header = () => {
               <div className="flex items-center">
                 <img
                   src={assets.group_profiles}
-                  alt="Group of people"
-                  className="mr-3 h-5 w-10"
+                  alt="Community support"
+                  className="mr-3 h-5 w-10 rounded"
                 />
                 <p className="text-sm md:text-base lg:text-lg">
                   Simply browse through for support
@@ -103,17 +119,17 @@ const Header = () => {
               
               <a
                 href="/bot"
-                className="inline-flex items-center px-6 py-3 rounded-full text-blue-600 text-base font-medium mt-6 hover:scale-105 transition-all duration-200 bg-white shadow-lg hover:shadow-xl max-w-fit"
+                className="inline-flex items-center rounded-full text-blue-600 text-xl font-medium mt-6 hover:scale-105 transition-all duration-200 bg-white shadow-lg hover:shadow-xl max-w-fit px-3"
                 role="button"
                 aria-label="Get mental health support"
               >
-                <span>Seek quick mental support</span>
                 <img 
                   src={assets.bot} 
                   alt="" 
-                  className="ml-2 w-6 h-6" 
+                  className="ml-1 w-13 h-10 rounded-t-3xl mb-5" 
                   aria-hidden="true"
                 />
+                <span>Hi, {names? names.split(' ')[0] : 'there'}. I'm ready to chat.</span>
                 <img 
                   src={assets.arrow_icon} 
                   alt="" 
