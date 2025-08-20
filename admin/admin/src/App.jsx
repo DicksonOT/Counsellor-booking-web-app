@@ -1,6 +1,6 @@
 import React, { useContext } from 'react'
 import Login from './pages/Login' 
-import { ToastContainer, toast } from 'react-toastify'
+import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import { AdminContext } from './context/AdminContext'
 import NavBar from './components/NavBar'
@@ -15,6 +15,9 @@ import CounsellorAppointments from './pages/counsellor/CounsellorAppointments'
 import CounsellorProfile from './pages/counsellor/CounsellorProfile'
 import CounsellorDashboard from './pages/counsellor/CounsellorDashboard'
 import Welcome from './components/Welcome'
+import ApproveCounselors from './pages/admin/ApproveCounselors'
+import UserProfile from './components/ClientProfile'
+import TherapySession from './pages/counsellor/TherapySession'
 
 const App = () => {
 
@@ -38,11 +41,14 @@ const App = () => {
             <Route path='/add-counsellor' element={<AddCounsellor/>} />
             <Route path='/all-appointments' element ={<AppointmentData />} />
             <Route path='/all-counsellors' element={<CounsellorsList/>} />
+            <Route path='/approve-counsellors' element={<ApproveCounselors/>} />
 
             {/* Counsellor route */}
             <Route path='/counsellor-dashboard' element={<CounsellorDashboard/>} />
             <Route path='/counsellor-appointments' element={<CounsellorAppointments/>} />
             <Route path='/counsellor-profile' element={<CounsellorProfile/>} />
+            <Route path="/counsellor/client-profile/:userId" element={<UserProfile />} />
+            <Route path="/session/:roomId" element= {<TherapySession/>} />
           </Routes>
         </div>
       </div>

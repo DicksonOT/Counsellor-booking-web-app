@@ -2,10 +2,11 @@ import React, { useContext } from "react";
 import { AppContext } from "../context/AppContext";
 import { assets } from "../assets/assets";
 import { useNavigate } from "react-router-dom";
+import { toast } from 'react-toastify'
 
 const Reviews = () => {
   const navigate = useNavigate();
-  const { reviews } = useContext(AppContext)
+  const { reviews, telegram_url, token } = useContext(AppContext)
   const renderStars = (rating) => {
     return Array(5).fill(0).map((_, i) => (
       <span
@@ -17,15 +18,23 @@ const Reviews = () => {
     ));
   };
 
+  const handleJoinCommunity = (event) => {
+    if (!token) {
+      event.preventDefault(); 
+      navigate('/login');
+      toast.warning('login to join the Community')
+    }
+  };
+
   return (
     <>
-      <div className="flex flex-col mt-10 px-5">
+      <div className="flex flex-col mt-35 px-5">
         <h1 className="text-xl md:text-2xl lg:text-3xl font-bold">
           Our Community
         </h1>
         <hr className="border-t-2 border-blue-400 my-4 w-16 ml-0" />
       </div>
-      
+
       <div className="relative w-full mt-5 overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center bg-fixed z-0"
@@ -78,16 +87,18 @@ const Reviews = () => {
               ))}
             </div>
           </div>
-
           <div className="text-center">
-            <button
-              onClick={() => navigate("/login")}
-              className="inline-flex items-center justify-center px-8 py-4 bg-blue-400 hover:bg-blue-500 text-white font-semibold rounded-full transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300"
+            <a
+              href={telegram_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={handleJoinCommunity} 
+              className="inline-flex items-center justify-center px-8 py-4 bg-blue-400 hover:bg-blue-500 text-white font-semibold rounded-full transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300 mt-9"
             >
               <span>Join Our Support Community</span>
-            </button>
+            </a>
             <p className="text-white/80 mt-4 text-lg max-w-md mx-auto">
-              Connect with others on WhatsApp for daily mental health support
+              Connect with others for daily mental health support
             </p>
           </div>
         </div>

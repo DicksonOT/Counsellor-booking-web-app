@@ -18,7 +18,8 @@ const AppContextProvider = (props) => {
     "Nov",
     "Dec",
   ];
-  const currency = "GH₵";
+  const currency = "USD";
+
   const calculateAge = (dob) => {
     if (!dob) return "N/A";
 
@@ -45,12 +46,38 @@ const AppContextProvider = (props) => {
   };
 
   const formattedDate = (slotDate) => {
-    const dateArray = slotDate.split("_");
+    // Add null/undefined check to prevent the error
+    if (!slotDate || typeof slotDate !== 'string') {
+      console.warn('formattedDate received invalid slotDate:', slotDate);
+      return "Invalid Date";
+    }
 
-    return (
-      dateArray[0] + " " + months[Number(dateArray[1])] + " " + dateArray[2]
-    );
+    try {
+      const dateArray = slotDate.split("_");
+      
+      // Ensure we have the expected format (3 parts: day_month_year)
+      if (dateArray.length !== 3) {
+        console.warn('formattedDate received unexpected format:', slotDate);
+        return "Invalid Date Format";
+      }
+
+      const day = dateArray[0];
+      const monthIndex = Number(dateArray[1]);
+      const year = dateArray[2];
+
+      // Validate month index
+      if (monthIndex < 1 || monthIndex > 12) {
+        console.warn('formattedDate received invalid month:', monthIndex);
+        return "Invalid Month";
+      }
+
+      return `${day} ${months[monthIndex]} ${year}`;
+    } catch (error) {
+      console.error('Error formatting date:', error, 'Input:', slotDate);
+      return "Date Error";
+    }
   };
+
   const value = {
     calculateAge,
     formattedDate,

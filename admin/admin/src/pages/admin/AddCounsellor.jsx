@@ -16,6 +16,7 @@ const AddCounsellor = () => {
   const [specialty,setSpecialty]=useState('Marriage and Family Counsellor')
   const [degree, setDegree]=useState('')
   const [location,setLocation]=useState('')
+  const [gpcNumber, setgpcNumber] = useState('')
 
   const {backendUrl, aToken} = useContext(AdminContext)
 
@@ -39,6 +40,7 @@ const AddCounsellor = () => {
         formData.append('specialty', specialty)
         formData.append('degree', degree)
         formData.append('location', location)
+        formData.append('gpcNumber', gpcNumber)
 
        const {data} = await axios.post(`${backendUrl}/api/admin/add-counsellor`, formData, {headers: {aToken}})
 
@@ -54,6 +56,7 @@ const AddCounsellor = () => {
         setAbout('')
         setFees('')
         setExperience('')
+        setgpcNumber('')
        }
        else{
         toast.error(data.message)
@@ -70,7 +73,7 @@ const AddCounsellor = () => {
         <form onSubmit={onSubmitHandler} className="w-full h-full p-6">
           
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Add Counsellor</h1>
+            <h1 className="text-3xl font-bold text-blue-500 mb-2">Add Counsellor</h1>
             <p className="text-gray-600">Fill in the details below to add a new counsellor to the system</p>
           </div>
 
@@ -79,7 +82,7 @@ const AddCounsellor = () => {
 
               {/* Image Upload Section */}
               <div className="mb-8 pb-8 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">Profile Picture</h2>
+                <h2 className="text-xl font-semibold  text-blue-500 mb-4">Profile Picture</h2>
                 <div className="flex items-center gap-6">
                   <label htmlFor="coun-img" className="cursor-pointer">
                     <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-gray-200 hover:border-blue-400 transition-colors duration-200">
@@ -98,7 +101,7 @@ const AddCounsellor = () => {
                     accept="image/*"
                   />
                   <div>
-                    <p className="text-sm font-medium text-gray-700">Upload counsellor picture</p>
+                    <p className="text-sm font-medium text-blue-700">Upload counsellor picture</p>
                     <p className="text-xs text-gray-500 mt-1">Recommended: Square image, at least 200x200px</p>
                   </div>
                 </div>
@@ -110,7 +113,7 @@ const AddCounsellor = () => {
                 {/* Left Column */}
                 <div className="space-y-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium  text-blue-700 mb-2">
                       Counsellor Name <span className="text-red-500">*</span>
                     </label>
                     <input 
@@ -124,7 +127,7 @@ const AddCounsellor = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium  text-blue-700 mb-2">
                       Email Address <span className="text-red-500">*</span>
                     </label>
                     <input 
@@ -138,7 +141,7 @@ const AddCounsellor = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-blue-700 mb-2">
                       Password <span className="text-red-500">*</span>
                     </label>
                     <input 
@@ -152,7 +155,7 @@ const AddCounsellor = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-blue-700 mb-2">
                       Experience <span className="text-red-500">*</span>
                     </label>
                     <input 
@@ -166,7 +169,7 @@ const AddCounsellor = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-blue-700 mb-2">
                       Consultation Fees <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
@@ -186,7 +189,7 @@ const AddCounsellor = () => {
                 {/* Right Column */}
                 <div className="space-y-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-blue-700 mb-2">
                       Specialty <span className="text-red-500">*</span>
                     </label>
                     <select 
@@ -204,7 +207,7 @@ const AddCounsellor = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-blue-700 mb-2">
                       Education <span className="text-red-500">*</span>
                     </label>
                     <input 
@@ -218,7 +221,21 @@ const AddCounsellor = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-blue-700 mb-2">
+                      GPCNumber <span className="text-red-500">*</span>
+                    </label>
+                    <input 
+                      onChange={(e)=> setgpcNumber(e.target.value)} 
+                      value={gpcNumber} 
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200" 
+                      type="text" 
+                      placeholder="e.g., GPC-123456" 
+                      required 
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-blue-700 mb-2">
                       Location <span className="text-red-500">*</span>
                     </label>
                     <input 
@@ -235,7 +252,7 @@ const AddCounsellor = () => {
 
               {/* About Section */}
               <div className="mt-8 pt-8 border-t border-gray-200">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-blue-700 mb-2">
                   About <span className="text-red-500">*</span>
                 </label>
                 <textarea 

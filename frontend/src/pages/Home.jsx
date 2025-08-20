@@ -6,9 +6,11 @@ import Banner from '../components/Banner'
 import { useNavigate } from 'react-router-dom'
 import { assets } from '../assets/assets'
 import Reviews from '../components/Community'
+import FullScreenVideoApp from '../components/Video'
 
-const home = () => {
+const Home = () => {
   const navigate=useNavigate()
+
   return (
     <div>
       <Header />
@@ -27,10 +29,11 @@ const home = () => {
       </div>
       <SpecialtyMenu />
       <Reviews />
+      <FullScreenVideoApp /> 
       <Banner />
 
     </div>
   )
 }
 
-export default home
+export default Home

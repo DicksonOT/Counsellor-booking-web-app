@@ -34,13 +34,13 @@ const Footer = () => {
               </li>
               <li 
                 className="hover:text-blue-600 hover:translate-x-1 transition-all duration-200 cursor-pointer"
-                // onClick={() => }
+                onClick={() =>{ navigate ("/privacy-policy"); scrollTo(0,0)} }
               >
                 Privacy Policy
               </li>
               <li 
                 className="hover:text-blue-600 hover:translate-x-1 transition-all duration-200 cursor-pointer"
-                // onClick={() =>}
+                onClick={() => { navigate ("/terms-of-service"); scrollTo(0,0)}}
               >
                 Terms of Service
               </li>
@@ -78,32 +78,32 @@ const Footer = () => {
 
         {/* Bottom Section */}
         <div className="border-t border-gray-200 py-8">
-          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <p className="text-gray-600 text-sm">
-              Copyright © 2025 QuietPlace. All rights reserved.
-            </p>
-            <div className="flex space-x-6 text-sm text-gray-600">
-              <span 
-                className="hover:text-blue-600 cursor-pointer transition-colors"
-                // onClick={() =>}
-              >
-                Privacy Policy
-              </span>
-              <span 
-                className="hover:text-blue-600 cursor-pointer transition-colors"
-                // onClick={()}
-              >
-                Terms of Service
-              </span>
-              <span 
-                className="hover:text-blue-600 cursor-pointer transition-colors"
-                // onClick={()=>}
-              >
-                Cookie Policy
-              </span>
-            </div>
-          </div>
+      <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+        <p className="text-gray-600 text-sm">
+          Copyright © 2025 QuietPlace. All rights reserved.
+        </p>
+        <div className="flex space-x-6 text-sm text-gray-600">
+          <a
+            className="hover:text-blue-600 cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+            onClick={() =>{ navigate ("/privacy-policy"); scrollTo(0,0)} }
+          >
+            Privacy Policy
+          </a>
+          <a
+            className="hover:text-blue-600 cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+            onClick={() => { navigate ("/terms-of-service"); scrollTo(0,0)}}
+          >
+            Terms of Service
+          </a>
+          <a
+            className="hover:text-blue-600 cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+            onClick={() => {navigate ("/cookie-policy"); scrollTo(0,0)} }
+          >
+            Cookie Policy
+          </a>
         </div>
+      </div>
+    </div>        
       </div>
     </div>
   );

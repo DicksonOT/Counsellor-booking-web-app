@@ -1,3 +1,4 @@
+import { Clock, Users, FileText, Heart } from 'lucide-react';
 import appointment_img from './appointment_img.png'
 import header_img from './header_img.jpg'
 import header_img1 from './header_img1.jpg'
@@ -95,7 +96,8 @@ import coun69 from './coun69.png'
 import coun70 from './coun70.png'
 import coun71 from './coun71.png'
 import vic    from './vic.jpg'
-
+import video  from './video.mp4'
+import elorm from './elorm.jpg'
 
 import Family from './Family.svg'
 import Student from './Student.svg'
@@ -132,8 +134,55 @@ export const assets = {
     header_img5,
     bot,
     vic,
-    linkedin
+    linkedin,
+    video,
+    elorm
 }
+
+export const moods = [
+  { label: '😄', value: 'happy', name: 'Happy', color: 'from-yellow-400 to-orange-500' },
+  { label: '😢', value: 'sad', name: 'Sad', color: 'from-blue-300 to-blue-500' },
+  { label: '😡', value: 'angry', name: 'Angry', color: 'from-red-400 to-red-600' },
+  { label: '😌', value: 'calm', name: 'Calm', color: 'from-green-300 to-green-500' },
+  { label: '😨', value: 'anxious', name: 'Anxious', color: 'from-purple-300 to-purple-600' },
+];
+
+
+export const questions = [
+  "I feel overwhelmed easily.",
+  "I often feel anxious or stressed.",
+  "I find it hard to relax even during free time.",
+  "I sleep well and wake up refreshed.",
+  "I find joy in everyday activities.",
+];
+
+  export const benefits = [
+    {
+      icon: Clock,
+      title: "Flexible Hours",
+      description: "Set your own schedule and work when it suits you best"
+    },
+    {
+      icon: Users,
+      title: "Client-Matching Support",
+      description: "We connect you with clients who are the right fit for your expertise"
+    },
+    {
+      icon: FileText,
+      title: "Reduced Admin Burden",
+      description: "Focus on what you do best - we handle the paperwork"
+    },
+    {
+      icon: Heart,
+      title: "Professional Community",
+      description: "Join a supportive network of mental health professionals"
+    }
+  ];
+
+  export const stats = [
+    { number: "98%", label: "Client Satisfaction" },
+    { number: "24/7", label: "Platform Support" }
+  ];
 
 export const SpecialtyData = [
     {
@@ -180,7 +229,7 @@ export const team = [
     {
         id: 3, 
         name: "Elorm Ahanogbe",
-        image: coun16,
+        image: elorm,
         about: "Elorm, our Software Engineer, provides steady support in maintaining and optimizing our platform's core systems. With a meticulous approach to troubleshooting and system stability, he helps ensure our technical infrastructure runs smoothly behind the scenes. While working with the team, Elorm focuses on incremental improvements that collectively enhance our platform's reliability and performance over time",
         linkedin: "https://linkedin.com/in/elorm-ahanogbe"
     },

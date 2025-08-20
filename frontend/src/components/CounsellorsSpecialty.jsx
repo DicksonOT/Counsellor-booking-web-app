@@ -11,13 +11,13 @@ const CounsellorsSpecialty = () => {
   );
 
   return (
-    <div className="flex flex-col gap-1 m-16 text-gray-900 md:mx-10">
+    <div className="flex flex-col gap-1 m-16 text-gray-900 md:mx-10 mt-9">
       <h1 className="text-2xl font-medium">Counsellors to book</h1>
       <hr className="border-t-2 border-blue-400 my-4 w-15" />
 
       <p className="sm:w-1/3 text-base">Choose a Counsellor to book</p>
       <div className="w-full grid grid-cols-4 gap-4 pt-5 gap-y-6 px-3 sm:px-0">
-        {filteredCounsellors.slice(0, 10).map((item, index) => (
+        {filteredCounsellors.slice(0, 10).map((item) => (
           <div
             onClick={() => navigate(`/appointment/${item._id}`)}
             className="border border-blue-200 rounded-xl overflow-hidden cursor-pointer hover:translate-y-[-10px] transition-all duration-500"

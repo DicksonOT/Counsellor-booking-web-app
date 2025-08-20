@@ -21,7 +21,7 @@ const ContactUs = () => {
   }
 
   return (
-    <div className="max-w-xl mx-auto p-6 bg-white rounded-lg shadow-md mt-15">
+    <div className="max-w-5xl mx-auto p-6 bg-white rounded-lg shadow-2xl mt-15">
       <h2 className="text-2xl text-blue-500 font-bold mb-6">Contact Us</h2>
       <form ref={form} onSubmit={sendEmail} className="space-y-4">
         <input
@@ -44,7 +44,7 @@ const ContactUs = () => {
           required
           className="w-full border border-gray-300 rounded px-3 py-2"
         >
-          <option value="" disabled>Select a subject</option>
+          <option value="" disabled selected>Select a subject</option>
           <option value="Counsellor Registration">Counsellor Registration</option>
           <option value="Complaints and Reports">Complaints and Reports</option>
           <option value="Others">Others</option>

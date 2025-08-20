@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../context/AppContext';
 
 const Chatbot = () => {
+  const {chatbotAssessment} = useContext(AppContext)
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false); 
@@ -16,6 +17,15 @@ const Chatbot = () => {
       chatboxRef.current.scrollTop = chatboxRef.current.scrollHeight;
     }
   }, [messages]);
+
+  useEffect(() => {
+  const timer = setTimeout(() => {
+    chatbotAssessment();
+  }, 180000); // 5 mins
+
+  return () => clearTimeout(timer); 
+}, []);
+
 
   useEffect(() => {
     if (!token) {
@@ -47,6 +57,7 @@ const Chatbot = () => {
 
       const botResponse = await response.text(); // Flask returns plain text
       setMessages(prevMessages => [...prevMessages, { sender: 'bot', text: botResponse }]);
+
 
     } catch (error) {
       console.error('Error sending message to chatbot:', error);
@@ -84,11 +95,11 @@ const Chatbot = () => {
   }
 
   return (
-    <div className="flex flex-col w-full h-[900px] border border-gray-300 rounded-lg shadow-lg overflow-hidden  mt-15">
+    <div className="flex flex-col w-full h-[900px] border border-gray-300 rounded-lg shadow-lg overflow-hidden mt-15">
       <div className="bg-blue-500 text-white p-4 text-center text-lg font-semibold rounded-t-lg">
         Talk to QuietPlace Guide
       </div>
-      <div ref={chatboxRef} className="flex-grow p-4 overflow-y-auto bg-gray-50 flex flex-col gap-3">
+      <div ref={chatboxRef} className="flex-grow p-4 overflow-y-auto bg-gray-50 flex flex-col gap-3 px-20">
         {messages.map((msg, index) => (
           <div
             key={index}

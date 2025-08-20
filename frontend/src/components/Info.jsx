@@ -9,8 +9,8 @@ const Info = () => {
         <div>
           <p className="text-xl md:text-2xl lg:text-3xl font-bold leading-tight md:leading-tight lg:leading-tight pt-10">
             Our vision
-            <hr className="border-t-2 border-blue-400 my-4 w-16" />
           </p>
+          <hr className="border-t-2 border-blue-400 my-4 w-16" />
           <p className="text-gray-700 leading-relaxed">
             Our vision is to revolutionize mental health support by providing
             accessible, affordable, and compassionate care to individuals
@@ -29,8 +29,8 @@ const Info = () => {
         <div>
           <p className="text-xl md:text-2xl lg:text-3xl font-bold leading-tight md:leading-tight lg:leading-tight pt-10">
             What We Do
-            <hr className="border-t-2 border-blue-400 my-4 w-16" />
           </p>
+          <hr className="border-t-2 border-blue-400 my-4 w-16" />
           <p className="text-gray-700 leading-relaxed mb-4">
             We provide a safe, supportive and non-judgmental space for
             individuals to access mental health support, whenever and wherever
@@ -64,7 +64,7 @@ const Info = () => {
         </div>
       </div>
             {/* Stats Bar */}
-      <div className="bg-blue-100 py-12 px-5 mt-5">
+      <div className="bg-blue-100 py-12 px-5 mt-9">
         <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           <div>
             <div className="text-3xl md:text-4xl font-bold text-blue-600 mb-2">10K+</div>

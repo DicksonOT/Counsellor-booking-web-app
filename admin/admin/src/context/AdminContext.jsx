@@ -1,4 +1,4 @@
-import { createContext, useState } from "react";
+import { createContext, useState, useCallback  } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 
@@ -12,6 +12,9 @@ const AdminContextProvider = (props) =>{
     const [counsellors, setCounsellors]=useState([])
     const [appointments, setAppointments] = useState([])
     const [dashboardData, setDashboardData] = useState(false)
+    const [pendingCounsellors, setPendingCounsellors] = useState([])
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     const getAllCounsellors = async () => {
         try {
@@ -72,8 +75,27 @@ const AdminContextProvider = (props) =>{
         }
     }
 
+      const fetchPendingCounsellors = useCallback (async () => {
+        try {
+          setLoading(true);
+          setError(null);
+    
+        const {data} = await axios.get(`${backendUrl}/api/admin/pending-counsellors`, { headers: { aToken } } );
+        if (data.success) {
+         setPendingCounsellors(data.counsellors);
+        }
+          else {toast.error(data.message)} 
+        } catch (error) {
+          console.error('Error fetching counsellors:', error);
+          setError(error.message || 'Failed to fetch pending applications');
+        } finally {
+          setLoading(false);
+        }
+      }, [backendUrl, aToken]);
+    
+
     const value ={
-        aToken, setAToken, backendUrl, counsellors, getAllCounsellors, changeAvailability, appointments, getAllAppointments, dashboardData, getDashboardData
+        aToken, setAToken, backendUrl, counsellors, getAllCounsellors, changeAvailability, appointments, getAllAppointments, dashboardData, getDashboardData, fetchPendingCounsellors, pendingCounsellors, setPendingCounsellors, loading, error
     }
 
     return(

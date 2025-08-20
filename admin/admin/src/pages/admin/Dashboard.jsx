@@ -6,7 +6,7 @@ import { AppContext } from '../../context/AppContext'
 
 const Dashboard = () => {
   const navigate = useNavigate()
-  const {dashboardData, getDashboardData, aToken} = useContext(AdminContext)
+  const {dashboardData, getDashboardData, aToken, pendingCounsellors} = useContext(AdminContext)
   const {formattedDate} = useContext(AppContext)
 
   useEffect(()=>{
@@ -19,6 +19,7 @@ const Dashboard = () => {
       <p className='text-base font-semibold'>Welcome back! Here's what's happening with your platform today.</p>
       <div className='flex flex-wrap gap-5 mt-5'>
 
+{/*  */}
         <div className='flex items-center gap-2 bg-white p-4 min-w-52 rounded border-2 border-gray-200 cursor-pointer hover:scale-105 transition-all'>
         <img className='w-14' src={assets.doctor_icon} alt='' />
         <div onClick={()=>{navigate('/all-counsellors'); window.scrollTo(0,0)}}>
@@ -43,12 +44,21 @@ const Dashboard = () => {
         </div>
         </div>
       </div>
-
+{/* bookings */}
       <div className='bg-white'>
         <div className='flex items-center gap-2.5 px-4 py-4 mt-10 rounded-t border border-gray-200'>
           <img src={assets.list_icon} alt='' />
           <p className='font-semibold text-gray-700'>Latest Bookings</p>
         </div>
+{/* pending counsellors */}
+        <div className='flex items-center gap-2 bg-white p-4 min-w-52 rounded border-2 border-gray-200 cursor-pointer hover:scale-105 transition-all'>
+        <img className='w-14' src={assets.appointments_icon} alt='' />
+        <div onClick={()=>navigate('/approve-counsellors')}>
+          <p className='text-xl font-semibold text-gray-600'>{pendingCounsellors.length}</p>
+          <p className='text-gray-500 '>Pending counsellors</p>
+        </div>
+        </div>
+
 
         <div  className='pt-4 border border-t-0  border-gray-200'>
           {

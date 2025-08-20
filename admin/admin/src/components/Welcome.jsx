@@ -66,7 +66,7 @@ const Welcome = () => {
         </p>
 
         {/* Navigation grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-8">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-6 mt-8">
           <button 
             onClick={() => navigate('/admin-dashboard')}
             className="nav-button bg-gradient-to-br from-indigo-500 to-purple-600 text-white p-6 rounded-xl font-semibold cursor-pointer transition-all duration-300 relative overflow-hidden shadow-lg flex flex-col items-center gap-2 hover:translate-y-[-8px] hover:scale-102 hover:shadow-xl active:translate-y-[-4px] active:scale-98"
@@ -97,6 +97,14 @@ const Welcome = () => {
           >
             <span className="text-2xl mb-1">🧑‍⚕️</span>
             <span className="text-sm opacity-95">Counsellors</span>
+          </button>
+
+          <button 
+            onClick={() => navigate('/approve-counsellors')}
+            className="nav-button bg-gradient-to-br from-purple-600 to-pink-400 text-white p-6 rounded-xl font-semibold cursor-pointer transition-all duration-300 relative overflow-hidden shadow-lg flex flex-col items-center gap-2 hover:translate-y-[-8px] hover:scale-102 hover:shadow-xl active:translate-y-[-4px] active:scale-98"
+          >
+            <span className="text-2xl mb-1">🧑‍⚕️</span>
+            <span className="text-sm opacity-95">pending Counsellors</span>
           </button>
         </div>
       </div>
@@ -153,7 +161,6 @@ const Welcome = () => {
             <span className="text-2xl mb-1">👤</span>
             <span className="text-sm opacity-95">Profile</span>
           </button>
-
         </div>
       </div>
 
