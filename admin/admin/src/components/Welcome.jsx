@@ -106,6 +106,14 @@ const Welcome = () => {
             <span className="text-2xl mb-1">🧑‍⚕️</span>
             <span className="text-sm opacity-95">pending Counsellors</span>
           </button>
+
+          <button 
+            onClick={() => navigate('/programs')}
+            className="nav-button bg-gradient-to-br from-purple-600 to-pink-400 text-white p-6 rounded-xl font-semibold cursor-pointer transition-all duration-300 relative overflow-hidden shadow-lg flex flex-col items-center gap-2 hover:translate-y-[-8px] hover:scale-102 hover:shadow-xl active:translate-y-[-4px] active:scale-98"
+          >
+            <span className="text-2xl mb-1">🧑‍⚕️</span>
+            <span className="text-sm opacity-95">Programs</span>
+          </button>
         </div>
       </div>
 

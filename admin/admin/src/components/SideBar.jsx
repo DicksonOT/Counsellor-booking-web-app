@@ -37,6 +37,22 @@ const SideBar = () => {
             <img src={assets.people_icon} alt='' />
             <p>Pending Counsellors</p>
           </NavLink>
+
+          <NavLink className={({isActive})=> `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${isActive? 'bg-[#F2F3FF] border-r-4 border-blue-500':''}`} to={'/programs'}>
+            <img src={assets.people_icon} alt='' />
+            <p>Create A Program</p>
+          </NavLink>
+
+          <NavLink className={({isActive})=> `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${isActive? 'bg-[#F2F3FF] border-r-4 border-blue-500':''}`} to={'/create-community'}>
+            <img src={assets.people_icon} alt='' />
+            <p>Create A Community</p>
+          </NavLink>
+
+          <NavLink className={({isActive})=> `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${isActive? 'bg-[#F2F3FF] border-r-4 border-blue-500':''}`} to={'/donations'}>
+            <img src={assets.add_icon} alt='' />
+            <p>View Donations</p>
+          </NavLink>
+
         </ul>
       }
 
@@ -52,11 +68,21 @@ const SideBar = () => {
             <p>Appointments</p>
           </NavLink>
 
+            <NavLink className={({isActive})=> `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${isActive? 'bg-[#F2F3FF] border-r-4 border-blue-500':''}`} to={'/community'}>
+            <img src={assets.people_icon} alt='' />
+            <p>Create An Activity</p>
+          </NavLink>
+
           <NavLink className={({isActive})=> `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${isActive? 'bg-[#F2F3FF] border-r-4 border-blue-500':''}`} to={'/counsellor-profile'}>
             <img src={assets.people_icon} alt='' />
             <p>Profile</p>
           </NavLink>
-          
+            
+          <NavLink className={({isActive})=> `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${isActive? 'bg-[#F2F3FF] border-r-4 border-blue-500':''}`} to={''}>
+            <img src={assets.people_icon} alt='' />
+            <p>Moderate An Activity</p>
+          </NavLink>
+           
         </ul>
       }
     </div>

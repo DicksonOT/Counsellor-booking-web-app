@@ -15,7 +15,6 @@ const Navbar = () => {
         navigate('/')
     }
 
-    // Enhanced mental health platform navigation structure
     const navigationItems = [
         {
             title: 'Services',
@@ -34,7 +33,7 @@ const Navbar = () => {
                 },
                 { 
                     name: 'Wellness Programs', 
-                    path: '/programs', 
+                    path: '/wellness-programs', 
                     description: 'Self-care & mindfulness',
                     features: ['Guided', 'Interactive', 'Progressive']
                 },
@@ -56,14 +55,14 @@ const Navbar = () => {
                     features: ['Evidence-based', 'Updated', 'Expert-reviewed']
                 },
                 { 
-                    name: 'Self-Help Tools', 
-                    path: '/tools', 
-                    description: 'Interactive exercises',
-                    features: ['Interactive', 'Personalized', 'Progress tracking']
+                    name: 'Wellness Activities', 
+                    path: '/activity', 
+                    description: 'Activities created by counsellors',
+                    features: [ 'Short-term (1 week or less)', 'Counsellor-guided', 'Interactive']
                 },
                 { 
                     name: 'Support Groups', 
-                    path: '/community', 
+                    path: '/communities', 
                     description: 'Community forums',
                     features: ['Moderated', 'Safe space', 'Anonymous']
                 },
@@ -79,28 +78,16 @@ const Navbar = () => {
             title: 'Professionals',
             items: [
                 { 
-                    name: 'Find a Therapist', 
+                    name: 'Find a Counsellor', 
                     path: '/counsellors', 
                     description: 'Licensed counselors',
                     features: ['Licensed', 'Background-checked', 'Experienced']
                 },
                 { 
-                    name: 'Psychiatrists', 
-                    path: '/psychiatrists', 
-                    description: 'Medical specialists',
-                    features: ['Board-certified', 'Specialized', 'Medication management']
-                },
-                { 
-                    name: 'Peer Counselors', 
-                    path: '/peer-counselors', 
-                    description: 'Lived experience support',
-                    features: ['Trained', 'Empathetic', 'Relatable']
-                },
-                { 
-                    name: 'Join Our Team', 
+                    name: 'Join Our Team of Counsellors', 
                     path: '/registration', 
                     description: 'Work with us',
-                    features: ['Rewarding', 'Flexible', 'Meaningful']
+                    features: ['Rewarding', 'Flexible', 'Impactful']
                 }
             ]
         }

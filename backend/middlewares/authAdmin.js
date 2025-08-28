@@ -14,8 +14,9 @@ const authAdmin = async (req, res, next) =>{
 
         if (token_decode !== process.env.ADMIN_EMAIL + process.env.ADMIN_PASSWORD){
             return res.json({success: false, message: 'Not authorised. Login again'})
-
         }
+
+        // req.userId = decoded.id;
 
         next()
 

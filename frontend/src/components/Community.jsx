@@ -6,7 +6,7 @@ import { toast } from 'react-toastify'
 
 const Reviews = () => {
   const navigate = useNavigate();
-  const { reviews, telegram_url, token } = useContext(AppContext)
+  const { reviews, token } = useContext(AppContext)
   const renderStars = (rating) => {
     return Array(5).fill(0).map((_, i) => (
       <span
@@ -23,6 +23,10 @@ const Reviews = () => {
       event.preventDefault(); 
       navigate('/login');
       toast.warning('login to join the Community')
+    }
+    else {
+      navigate('/communities')
+      window.scrollTo(0,0)
     }
   };
 
@@ -89,7 +93,6 @@ const Reviews = () => {
           </div>
           <div className="text-center">
             <a
-              href={telegram_url}
               target="_blank"
               rel="noopener noreferrer"
               onClick={handleJoinCommunity} 

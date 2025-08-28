@@ -19,8 +19,8 @@ const MeditationCenter = () => {
       instructor: "Dr. Sarah Chen",
       rating: 4.9,
       participants: 12400,
-      thumbnail: "https://youtu.be/vj0JDwQLof4?si=uFNKb_mXrDrxd4Q_",
-      videoUrl: "https://www.youtube.com/embed/vj0JDwQLof4"
+      thumbnail: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=250&fit=crop&crop=center",
+      videoUrl: "https://www.youtube.com/embed/vj0JDwQLof4?autoplay=1"
     },
     {
       id: 2,
@@ -33,7 +33,7 @@ const MeditationCenter = () => {
       rating: 4.8,
       participants: 8900,
       thumbnail: "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=400&h=250&fit=crop&crop=center",
-      videoUrl: "https://www.youtube.com/embed/15q17jbBWU0"
+      videoUrl: "https://www.youtube.com/embed/15q17jbBWU0?autoplay=1"
     },
     {
       id: 3,
@@ -46,7 +46,7 @@ const MeditationCenter = () => {
       rating: 4.7,
       participants: 15200,
       thumbnail: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=250&fit=crop&crop=center",
-      videoUrl: "https://www.youtube.com/embed/ZToicYcHIOU"
+      videoUrl: "https://www.youtube.com/embed/ZToicYcHIOU?autoplay=1"
     },
     {
       id: 4,
@@ -59,7 +59,7 @@ const MeditationCenter = () => {
       rating: 4.9,
       participants: 9800,
       thumbnail: "https://images.unsplash.com/photo-1591343395082-e120087004b4?w=400&h=250&fit=crop&crop=center",
-      videoUrl: "https://www.youtube.com/embed/O-6f5wQXSu8"
+      videoUrl: "https://www.youtube.com/embed/O-6f5wQXSu8?autoplay=1"
     },
     {
       id: 5,
@@ -72,7 +72,7 @@ const MeditationCenter = () => {
       rating: 4.8,
       participants: 11600,
       thumbnail: "https://images.unsplash.com/photo-1497551060073-4c5ab6435f12?w=400&h=250&fit=crop&crop=center",
-      videoUrl: "https://www.youtube.com/embed/aEqlQvczMJQ"
+      videoUrl: "https://www.youtube.com/embed/aEqlQvczMJQ?autoplay=1"
     },
     {
       id: 6,
@@ -85,7 +85,241 @@ const MeditationCenter = () => {
       rating: 4.7,
       participants: 7300,
       thumbnail: "https://images.unsplash.com/photo-1545389336-cf090694435e?w=400&h=250&fit=crop&crop=center",
-      videoUrl: "https://www.youtube.com/embed/inpok4MKVLM"
+      videoUrl: "https://www.youtube.com/embed/inpok4MKVLM?autoplay=1"
+    },
+    {
+      id: 7,
+      title: "Walking Meditation",
+      description: "Combine gentle movement with mindfulness in this outdoor meditation practice for mind-body connection.",
+      duration: "22 min",
+      difficulty: "Beginner",
+      category: "movement",
+      instructor: "Daniel Kim",
+      rating: 4.8,
+      participants: 9200,
+      thumbnail: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=250&fit=crop&crop=center",
+      videoUrl: "https://www.youtube.com/embed/vmK_grbUbJQ?autoplay=1"
+    },
+    {
+      id: 8,
+      title: "Loving Kindness Meditation",
+      description: "Cultivate compassion and love for yourself and others through this heart-opening practice.",
+      duration: "16 min",
+      difficulty: "Intermediate",
+      category: "compassion",
+      instructor: "Sofia Patel",
+      rating: 4.9,
+      participants: 6800,
+      thumbnail: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&h=250&fit=crop&crop=center",
+      videoUrl: "https://www.youtube.com/embed/sz7cpV7ERsM?autoplay=1"
+    },
+    {
+      id: 9,
+      title: "Chakra Balancing Session",
+      description: "Align your energy centers with guided visualization and breathing techniques for inner harmony.",
+      duration: "35 min",
+      difficulty: "Advanced",
+      category: "chakras",
+      instructor: "Maya Singh",
+      rating: 4.7,
+      participants: 5400,
+      thumbnail: "https://images.unsplash.com/photo-1599447421416-3414500d18a5?w=400&h=250&fit=crop&crop=center",
+      videoUrl: "https://www.youtube.com/embed/StrbppmsZJw?autoplay=1"
+    },
+    {
+      id: 10,
+      title: "5-Minute Quick Reset",
+      description: "A brief but powerful meditation perfect for busy schedules - instant stress relief anytime, anywhere.",
+      duration: "5 min",
+      difficulty: "Beginner",
+      category: "quick",
+      instructor: "Alex Thompson",
+      rating: 4.6,
+      participants: 18500,
+      thumbnail: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=250&fit=crop&crop=center",
+      videoUrl: "https://www.youtube.com/embed/6p_yaNFSYao?autoplay=1"
+    },
+    {
+      id: 11,
+      title: "Evening Rain Sounds",
+      description: "Peaceful rain sounds with gentle piano melodies to help you unwind and prepare for restful sleep.",
+      duration: "60 min",
+      difficulty: "Beginner",
+      category: "music",
+      instructor: "Nature Sounds Studio",
+      rating: 4.9,
+      participants: 22100,
+      thumbnail: "https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=400&h=250&fit=crop&crop=center",
+      videoUrl: "https://www.youtube.com/embed/mPZkdNFkNps?autoplay=1"
+    },
+    {
+      id: 12,
+      title: "Forest Meditation Music",
+      description: "Immersive forest sounds with ambient meditation music for deep relaxation and nature connection.",
+      duration: "45 min",
+      difficulty: "Beginner",
+      category: "music",
+      instructor: "Ambient Collective",
+      rating: 4.8,
+      participants: 14700,
+      thumbnail: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=250&fit=crop&crop=center",
+      videoUrl: "https://www.youtube.com/embed/eKFTSSKCzWA?autoplay=1"
+    },
+    {
+      id: 13,
+      title: "Ocean Waves Evening",
+      description: "Soothing ocean waves with soft instrumental music - perfect for evening relaxation and sleep preparation.",
+      duration: "90 min",
+      difficulty: "Beginner",
+      category: "music",
+      instructor: "Ocean Sounds Studio",
+      rating: 4.9,
+      participants: 19300,
+      thumbnail: "https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=400&h=250&fit=crop&crop=center",
+      videoUrl: "https://www.youtube.com/embed/V1bFr2SWP1I?autoplay=1"
+    },
+    {
+      id: 14,
+      title: "Tibetan Singing Bowls",
+      description: "Traditional Tibetan singing bowls with healing frequencies for deep meditation and energy cleansing.",
+      duration: "40 min",
+      difficulty: "Intermediate",
+      category: "music",
+      instructor: "Himalayan Sound Healers",
+      rating: 4.8,
+      participants: 8900,
+      thumbnail: "https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=400&h=250&fit=crop&crop=center",
+      videoUrl: "https://www.youtube.com/embed/YQS2StSwg5o?autoplay=1"
+    },
+    {
+      id: 15,
+      title: "Evening Piano Reflections",
+      description: "Gentle piano melodies with soft ambient sounds designed for evening contemplation and peaceful reflection.",
+      duration: "55 min",
+      difficulty: "Beginner",
+      category: "music",
+      instructor: "Evening Music Collective",
+      rating: 4.7,
+      participants: 12800,
+      thumbnail: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=250&fit=crop&crop=center",
+      videoUrl: "https://www.youtube.com/embed/1ZYbU82GVz4?autoplay=1"
+    },
+    {
+      id: 16,
+      title: "Sunrise Nature Awakening",
+      description: "Gentle morning sounds with birds singing and soft instrumental music to energize your day naturally.",
+      duration: "45 min",
+      difficulty: "Beginner",
+      category: "morning-music",
+      instructor: "Dawn Sound Studio",
+      rating: 4.8,
+      participants: 16500,
+      thumbnail: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=250&fit=crop&crop=center",
+      videoUrl: "https://www.youtube.com/embed/WHPYKLQP-x4?autoplay=1"
+    },
+    {
+      id: 17,
+      title: "Morning Coffee Cafe Sounds",
+      description: "Cozy coffee shop ambiance with light jazz and gentle chatter - perfect for morning focus and productivity.",
+      duration: "60 min",
+      difficulty: "Beginner",
+      category: "morning-music",
+      instructor: "Cafe Sounds Collective",
+      rating: 4.7,
+      participants: 21300,
+      thumbnail: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&h=250&fit=crop&crop=center",
+      videoUrl: "https://www.youtube.com/embed/hHW1oY26kxQ?autoplay=1"
+    },
+    {
+      id: 18,
+      title: "Energizing Morning Flow",
+      description: "Uplifting instrumental music with nature sounds to boost motivation and positive energy for the day ahead.",
+      duration: "30 min",
+      difficulty: "Beginner",
+      category: "morning-music",
+      instructor: "Morning Energy Studios",
+      rating: 4.9,
+      participants: 14200,
+      thumbnail: "https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?w=400&h=250&fit=crop&crop=center",
+      videoUrl: "https://www.youtube.com/embed/lFcSrYw-ARY?autoplay=1"
+    },
+    {
+      id: 19,
+      title: "Garden Morning Meditation",
+      description: "Peaceful garden sounds with gentle wind chimes and soft acoustic guitar for mindful morning moments.",
+      duration: "40 min",
+      difficulty: "Beginner",
+      category: "morning-music",
+      instructor: "Garden Harmony Collective",
+      rating: 4.8,
+      participants: 9800,
+      thumbnail: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&h=250&fit=crop&crop=center",
+      videoUrl: "https://www.youtube.com/embed/2YwlViVr6tQ?autoplay=1"
+    },
+    {
+      id: 20,
+      title: "Afternoon Focus Flow",
+      description: "Ambient electronic music with subtle beats designed to maintain concentration during afternoon work sessions.",
+      duration: "50 min",
+      difficulty: "Beginner",
+      category: "afternoon-music",
+      instructor: "Focus Flow Studios",
+      rating: 4.7,
+      participants: 18700,
+      thumbnail: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=250&fit=crop&crop=center",
+      videoUrl: "https://www.youtube.com/embed/jfKfPfyJRdk?autoplay=1"
+    },
+    {
+      id: 21,
+      title: "Peaceful Afternoon Garden",
+      description: "Relaxing garden sounds with gentle water features and soft instrumental music for midday calm.",
+      duration: "45 min",
+      difficulty: "Beginner",
+      category: "afternoon-music",
+      instructor: "Afternoon Serenity",
+      rating: 4.8,
+      participants: 12400,
+      thumbnail: "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=400&h=250&fit=crop&crop=center",
+      videoUrl: "https://www.youtube.com/embed/hzfm5EKHrjc?autoplay=1"
+    },
+    {
+      id: 22,
+      title: "Library Study Atmosphere",
+      description: "Quiet library ambiance with soft page turning and gentle background sounds perfect for afternoon studying.",
+      duration: "90 min",
+      difficulty: "Beginner",
+      category: "afternoon-music",
+      instructor: "Study Sound Labs",
+      rating: 4.6,
+      participants: 25600,
+      thumbnail: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=250&fit=crop&crop=center",
+      videoUrl: "https://www.youtube.com/embed/q76bMs-NwRk?autoplay=1"
+    },
+    {
+      id: 23,
+      title: "Afternoon Breeze Meditation",
+      description: "Gentle wind sounds with soft chimes and nature ambiance for peaceful afternoon reflection and rest.",
+      duration: "35 min",
+      difficulty: "Beginner",
+      category: "afternoon-music",
+      instructor: "Breeze Meditation Studio",
+      rating: 4.9,
+      participants: 8900,
+      thumbnail: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=250&fit=crop&crop=center",
+      videoUrl: "https://www.youtube.com/embed/Z1oOKE6zAq0?autoplay=1"
+    },
+    {
+      id: 24,
+      title: "Cozy Rainy Afternoon",
+      description: "Gentle afternoon rain with soft jazz piano - perfect for relaxation and peaceful indoor moments.",
+      duration: "65 min",
+      difficulty: "Beginner",
+      category: "afternoon-music",
+      instructor: "Rainy Day Sounds",
+      rating: 4.8,
+      participants: 17200,
+      thumbnail: "https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=400&h=250&fit=crop&crop=center",
+      videoUrl: "https://www.youtube.com/embed/LNahGSl3BuE?autoplay=1"
     }
   ];
 
@@ -96,7 +330,14 @@ const MeditationCenter = () => {
     { id: 'morning', name: 'Morning', color: 'bg-blue-300' },
     { id: 'anxiety', name: 'Anxiety Relief', color: 'bg-blue-700' },
     { id: 'sleep', name: 'Sleep', color: 'bg-blue-800' },
-    { id: 'focus', name: 'Focus', color: 'bg-blue-900' }
+    { id: 'focus', name: 'Focus', color: 'bg-blue-900' },
+    { id: 'movement', name: 'Movement', color: 'bg-blue-500' },
+    { id: 'compassion', name: 'Compassion', color: 'bg-blue-600' },
+    { id: 'chakras', name: 'Chakras', color: 'bg-blue-700' },
+    { id: 'quick', name: 'Quick Sessions', color: 'bg-blue-400' },
+    { id: 'music', name: 'Evening Music', color: 'bg-blue-800' },
+    { id: 'morning-music', name: 'Morning Music', color: 'bg-blue-300' },
+    { id: 'afternoon-music', name: 'Afternoon Music', color: 'bg-blue-500' }
   ];
 
   const filteredSessions = meditationSessions.filter(session => {
@@ -110,9 +351,12 @@ const MeditationCenter = () => {
     setActiveVideo(activeVideo === sessionId ? null : sessionId);
   };
 
+  const handleStartSession = (sessionId) => {
+    setActiveVideo(sessionId);
+  };
+
   return (
     <div className="min-h-screen bg-white">
-
       {/* Hero Section */}
       <section className="relative py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-blue-50 to-white">
         <div className="max-w-4xl mx-auto text-center">
@@ -174,8 +418,8 @@ const MeditationCenter = () => {
                 key={session.id}
                 className="group bg-white border border-gray-200 rounded-2xl overflow-hidden hover:transform hover:scale-105 hover:border-blue-200 transition-all duration-300 hover:shadow-xl shadow-sm"
               >
-                {/* Video Thumbnail */}
-                <div className="relative h-48 bg-blue-500 overflow-hidden">
+                {/* Video/Image Thumbnail */}
+                <div className="relative h-48 overflow-hidden">
                   {activeVideo === session.id ? (
                     <iframe
                       src={session.videoUrl}
@@ -186,22 +430,34 @@ const MeditationCenter = () => {
                       title={session.title}
                     />
                   ) : (
-                    <>
-                      <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-blue-600"></div>
+                    <div className="relative h-full">
+                      <img
+                        src={session.thumbnail}
+                        alt={session.title}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+                      
+                      {/* Play Button */}
                       <div className="absolute inset-0 flex items-center justify-center">
                         <button
                           onClick={() => handlePlayVideo(session.id)}
-                          className="w-16 h-16 bg-white/20 backdrop-blur-sm border border-white/30 rounded-full flex items-center justify-center hover:bg-white/30 hover:scale-110 transition-all duration-200"
+                          className="w-16 h-16 bg-white/90 backdrop-blur-sm border border-white/30 rounded-full flex items-center justify-center hover:bg-white hover:scale-110 transition-all duration-200 shadow-lg group-hover:shadow-xl"
                         >
-                          <Play className="w-8 h-8 text-white ml-1" />
+                          <Play className="w-8 h-8 text-blue-500 ml-1" />
                         </button>
                       </div>
                       
+                      {/* Duration Badge */}
+                      <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm font-medium">
+                        {session.duration}
+                      </div>
+                      
                       {/* Floating elements animation */}
-                      <div className="absolute top-4 left-4 w-3 h-3 bg-white/30 rounded-full animate-pulse"></div>
-                      <div className="absolute top-8 right-8 w-2 h-2 bg-white/40 rounded-full animate-bounce" style={{animationDelay: '0.5s'}}></div>
-                      <div className="absolute bottom-6 left-8 w-4 h-4 bg-white/20 rounded-full animate-ping" style={{animationDelay: '1s'}}></div>
-                    </>
+                      <div className="absolute top-6 left-6 w-3 h-3 bg-white/40 rounded-full animate-pulse"></div>
+                      <div className="absolute top-12 right-12 w-2 h-2 bg-white/50 rounded-full animate-bounce" style={{animationDelay: '0.5s'}}></div>
+                      <div className="absolute bottom-8 left-8 w-4 h-4 bg-white/30 rounded-full animate-ping" style={{animationDelay: '1s'}}></div>
+                    </div>
                   )}
                 </div>
 
@@ -240,8 +496,11 @@ const MeditationCenter = () => {
                     by {session.instructor}
                   </div>
 
-                  <button className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 hover:transform hover:translateY(-1px) hover:shadow-lg">
-                    Start Session
+                  <button 
+                    onClick={() => handleStartSession(session.id)}
+                    className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 hover:transform hover:translateY(-1px) hover:shadow-lg"
+                  >
+                    {activeVideo === session.id ? 'Playing...' : 'Play'}
                   </button>
                 </div>
               </div>
@@ -269,8 +528,10 @@ const MeditationCenter = () => {
           <p className="text-gray-600 text-lg mb-8">
             Join thousands of users who have found peace and clarity through our guided meditation programs.
           </p>
-          <button onClick={navigate('/community')}
-          className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-4 px-8 rounded-xl transition-all duration-200 hover:transform hover:scale-105 hover:shadow-xl">
+          <button 
+            onClick={() => navigate ("/community") }
+            className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-4 px-8 rounded-xl transition-all duration-200 hover:transform hover:scale-105 hover:shadow-xl"
+          >
             Start Your Journey Today
           </button>
         </div>

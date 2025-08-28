@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom'
 import { assets } from '../assets/assets'
 import Reviews from '../components/Community'
 import FullScreenVideoApp from '../components/Video'
+import HelpUsHelpOthers from '../components/DonationBanner'
 
 const Home = () => {
   const navigate=useNavigate()
@@ -31,6 +32,7 @@ const Home = () => {
       <Reviews />
       <FullScreenVideoApp /> 
       <Banner />
+      <HelpUsHelpOthers />
 
     </div>
   )

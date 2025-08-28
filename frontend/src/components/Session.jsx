@@ -2,32 +2,27 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Calendar, Clock, Video, Phone, User, MapPin, Star, Filter, Plus, CheckCircle, XCircle, AlertCircle, Bell, Edit, Trash2 } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 
 const UserSessions = () => {
+  const navigate = useNavigate()
   const { 
     getUserSessions, 
     joinSession, 
-    bookSession,
     rescheduleSession,
     cancelSession,
     rateSession,
-    counsellors, 
-    getCounsellors,
     getUserNotifications,
     markNotificationRead,
     setupSessionWebSocket,
     userData,
-    backendUrl,
-    token
   } = useContext(AppContext);
 
   const [sessions, setSessions] = useState([]);
   const [activeTab, setActiveTab] = useState('upcoming');
   const [loading, setLoading] = useState(false);
-  const [showBookingModal, setShowBookingModal] = useState(false);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [showRatingModal, setShowRatingModal] = useState(false);
-  const [selectedCounsellor, setSelectedCounsellor] = useState(null);
   const [selectedSession, setSelectedSession] = useState(null);
   const [filterStatus, setFilterStatus] = useState('all');
   const [notifications, setNotifications] = useState([]);
@@ -37,7 +32,6 @@ const UserSessions = () => {
 
   useEffect(() => {
     fetchSessions();
-    fetchCounsellors();
     fetchNotifications();
     
     // Setup WebSocket for real-time updates
@@ -63,17 +57,8 @@ const UserSessions = () => {
       }
     } catch (error) {
       console.error('Error fetching sessions:', error);
-      toast.error('Failed to load sessions');
     }
     setLoading(false);
-  };
-
-  const fetchCounsellors = async () => {
-    try {
-      await getCounsellors();
-    } catch (error) {
-      console.error('Error fetching counsellors:', error);
-    }
   };
 
   const fetchNotifications = async () => {
@@ -179,6 +164,10 @@ const UserSessions = () => {
     }
   };
 
+  const handleBookAppointment = () => {
+    navigate('/counsellors');
+  };
+
   const getStatusIcon = (status) => {
     switch (status?.toLowerCase()) {
       case 'confirmed':
@@ -231,153 +220,6 @@ const UserSessions = () => {
     }
     return statusFilter;
   });
-
-  const BookingModal = () => {
-    const [selectedDate, setSelectedDate] = useState('');
-    const [selectedTime, setSelectedTime] = useState('');
-    const [sessionType, setSessionType] = useState('video');
-    const [notes, setNotes] = useState('');
-    const [bookingLoading, setBookingLoading] = useState(false);
-
-    const handleBooking = async () => {
-      if (!selectedDate || !selectedTime) {
-        toast.error('Please select date and time');
-        return;
-      }
-
-      const bookingData = {
-        counsellorId: selectedCounsellor._id,
-        date: selectedDate,
-        time: selectedTime,
-        sessionType: sessionType,
-        notes,
-        scheduledTime: new Date(`${selectedDate}T${selectedTime}:00`).toISOString()
-      };
-
-      setBookingLoading(true);
-      try {
-        const response = await bookSession(bookingData);
-        if (response.success) {
-          toast.success('Session booked successfully!');
-          setShowBookingModal(false);
-          await fetchSessions();
-          // Reset form
-          setSelectedDate('');
-          setSelectedTime('');
-          setSessionType('video');
-          setNotes('');
-        } else {
-          toast.error(response.message || 'Failed to book session');
-        }
-      } catch (error) {
-        console.error('Error booking session:', error);
-        toast.error('Failed to book session');
-      }
-      setBookingLoading(false);
-    };
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-          <h3 className="text-lg font-semibold mb-4">Book Session</h3>
-          
-          {selectedCounsellor && (
-            <div className="mb-4 p-3 bg-gray-50 rounded-lg flex items-center space-x-3">
-              <img 
-                src={selectedCounsellor.image || '/api/placeholder/48/48'} 
-                alt={selectedCounsellor.name}
-                className="w-12 h-12 rounded-full object-cover"
-                onError={(e) => {
-                  e.target.src = '/api/placeholder/48/48';
-                }}
-              />
-              <div>
-                <h4 className="font-medium">{selectedCounsellor.name}</h4>
-                <p className="text-sm text-gray-600">{selectedCounsellor.speciality || selectedCounsellor.specialty}</p>
-                <p className="text-sm text-green-600">${selectedCounsellor.fees || 80}/session</p>
-              </div>
-            </div>
-          )}
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Date *</label>
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
-                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Time *</label>
-              <select
-                value={selectedTime}
-                onChange={(e) => setSelectedTime(e.target.value)}
-                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
-              >
-                <option value="">Select time</option>
-                <option value="09:00">9:00 AM</option>
-                <option value="10:00">10:00 AM</option>
-                <option value="11:00">11:00 AM</option>
-                <option value="14:00">2:00 PM</option>
-                <option value="15:00">3:00 PM</option>
-                <option value="16:00">4:00 PM</option>
-                <option value="17:00">5:00 PM</option>
-                <option value="18:00">6:00 PM</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Session Type</label>
-              <select
-                value={sessionType}
-                onChange={(e) => setSessionType(e.target.value)}
-                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="video">Video Call</option>
-                <option value="audio">Audio Call</option>
-                <option value="phone">Phone Call</option>
-                <option value="in-person">In Person</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Notes (Optional)</label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Any specific topics or concerns..."
-                rows={3}
-                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-              />
-            </div>
-          </div>
-
-          <div className="flex space-x-3 mt-6">
-            <button
-              onClick={() => setShowBookingModal(false)}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              disabled={bookingLoading}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleBooking}
-              disabled={!selectedDate || !selectedTime || bookingLoading}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-            >
-              {bookingLoading ? 'Booking...' : 'Book Session'}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   const RescheduleModal = () => {
     const [newDate, setNewDate] = useState('');
@@ -671,51 +513,6 @@ const UserSessions = () => {
     );
   };
 
-  const CounsellorCard = ({ counsellor }) => (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-      <div className="flex items-center space-x-3 mb-3">
-        <img 
-          src={counsellor.image || '/api/placeholder/60/60'} 
-          alt={counsellor.name}
-          className="w-12 h-12 rounded-full object-cover"
-          onError={(e) => {
-            e.target.src = '/api/placeholder/60/60';
-          }}
-        />
-        <div className="flex-1">
-          <h3 className="font-semibold text-gray-900">{counsellor.name}</h3>
-          <p className="text-sm text-gray-600">{counsellor.speciality || counsellor.specialty}</p>
-          <div className="flex items-center space-x-1">
-            <Star className="h-4 w-4 text-yellow-400 fill-current" />
-            <span className="text-sm text-gray-600">{counsellor.rating || 'N/A'}</span>
-          </div>
-        </div>
-        <div className="text-right">
-          <p className="text-lg font-semibold text-green-600">${counsellor.fees || 80}</p>
-          <p className="text-xs text-gray-500">per session</p>
-        </div>
-      </div>
-      
-      <div className="flex flex-wrap gap-1 mb-3">
-        {(counsellor.availability || ['Mon', 'Wed', 'Fri']).map(day => (
-          <span key={day} className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">
-            {day}
-          </span>
-        ))}
-      </div>
-
-      <button
-        onClick={() => {
-          setSelectedCounsellor(counsellor);
-          setShowBookingModal(true);
-        }}
-        className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-      >
-        Book Session
-      </button>
-    </div>
-  );
-
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="flex items-center justify-between mb-6">
@@ -774,11 +571,17 @@ const UserSessions = () => {
         {[
           { key: 'upcoming', label: 'Upcoming' },
           { key: 'history', label: 'History' },
-          { key: 'book', label: 'Book New' }
+          { key: 'appointment', label: 'Book Appointment' }
         ].map(tab => (
           <button
             key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => {
+              if (tab.key === 'appointment') {
+                handleBookAppointment();
+              } else {
+                setActiveTab(tab.key);
+              }
+            }}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               activeTab === tab.key
                 ? 'bg-white text-blue-600 shadow-sm'
@@ -817,74 +620,43 @@ const UserSessions = () => {
       )}
 
       {/* Content */}
-      {activeTab === 'book' ? (
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Available Counsellors</h2>
-            <div className="text-sm text-gray-500">
-              {counsellors.length} counsellor{counsellors.length !== 1 ? 's' : ''} available
-            </div>
+      <div>
+        {loading ? (
+          <div className="flex justify-center items-center h-32">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           </div>
-          {counsellors.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-gray-400 mb-4">
-                <User className="h-16 w-16 mx-auto" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No counsellors available
-              </h3>
-              <p className="text-gray-600">
-                Please check back later for available counsellors.
-              </p>
+        ) : filteredSessions.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-gray-400 mb-4">
+              <Calendar className="h-16 w-16 mx-auto" />
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {counsellors.map(counsellor => (
-                <CounsellorCard key={counsellor._id || counsellor.id} counsellor={counsellor} />
-              ))}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div>
-          {loading ? (
-            <div className="flex justify-center items-center h-32">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            </div>
-          ) : filteredSessions.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-gray-400 mb-4">
-                <Calendar className="h-16 w-16 mx-auto" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No sessions found
-              </h3>
-              <p className="text-gray-600 mb-4">
-                {activeTab === 'upcoming' 
-                  ? "You don't have any upcoming sessions."
-                  : "No session history available."
-                }
-              </p>
-              <button
-                onClick={() => setActiveTab('book')}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Book New Session
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredSessions.map(session => (
-                <SessionCard key={session._id || session.id} session={session} />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              No sessions found
+            </h3>
+            <p className="text-gray-600 mb-4">
+              {activeTab === 'upcoming' 
+                ? "You don't have any upcoming sessions."
+                : "No session history available."
+              }
+            </p>
+            <button
+              onClick={handleBookAppointment}
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Book Appointment
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredSessions.map(session => (
+              <SessionCard key={session._id || session.id} session={session} />
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Modals */}
-      {showBookingModal && <BookingModal />}
       {showRescheduleModal && <RescheduleModal />}
       {showRatingModal && <RatingModal />}
     </div>

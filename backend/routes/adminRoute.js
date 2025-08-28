@@ -1,5 +1,5 @@
 import express from 'express';
-import { addCounsellor, adminDashboard, allCounsellors, updateCounsellorStatus, changeAvailability, getAllAppointments, loginAdmin , getPendingCounsellors} from '../controllers/adminControllers.js';
+import { addCounsellor, adminDashboard, allCounsellors, updateCounsellorStatus, changeAvailability, getAllAppointments, loginAdmin , getPendingCounsellors, addProgram, getAllPrograms, updateProgram, deleteProgram, createCommunity, getDonationAnalytics, getDonations, exportDonations} from '../controllers/adminControllers.js';
 import upload from '../middlewares/multer.js';
 import authAdmin from '../middlewares/authAdmin.js';
 
@@ -17,5 +17,16 @@ adminRouter.post('/change-availability', authAdmin, changeAvailability )
 
 adminRouter.get('/get-all-appointments', authAdmin, getAllAppointments)
 adminRouter.get('/dashboard', authAdmin, adminDashboard)
+
+adminRouter.post("/add-program", authAdmin, addProgram);
+adminRouter.get("/programs", authAdmin, getAllPrograms);
+adminRouter.put("/update-program/:id", authAdmin, updateProgram);
+adminRouter.delete("/delete-program/:id", authAdmin, deleteProgram);
+
+adminRouter.post("/create-community", authAdmin, upload.single('image'), createCommunity)
+
+adminRouter.get('/donation-analytics', authAdmin, getDonationAnalytics);
+adminRouter.get('/donations', authAdmin, getDonations);
+adminRouter.get('/export-donations', authAdmin, exportDonations);
 
 export default adminRouter

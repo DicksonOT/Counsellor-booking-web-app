@@ -1,6 +1,35 @@
 import express from 'express'
 import upload from '../middlewares/multer.js'
-import { appointmentCancelled, appointmentComplete, counsellorAppointments, counsellorLogin, dashBoard, manualAssessment, profileData, updateProfile, registerCounsellor, getUserProfile, createOnlineSession, updateSessionStatus, getCounsellorSessions, getClientAppointments, getClientSessions, startCall, changeAvailability, scheduleSession, joinSession } from '../controllers/counsellorController.js'
+import { 
+  appointmentCancelled, 
+  appointmentComplete, 
+  counsellorAppointments, 
+  counsellorLogin, 
+  dashBoard, 
+  manualAssessment, 
+  profileData, 
+  updateProfile, 
+  registerCounsellor, 
+  getUserProfile, 
+  createOnlineSession, 
+  updateSessionStatus, 
+  getCounsellorSessions, 
+  getClientAppointments, 
+  getClientSessions, 
+  startCall, 
+  changeAvailability, 
+  scheduleSession, 
+  joinSession,   
+  getActivities, 
+  getParticipants,
+  getReports,
+  reportContent,
+  updateActivity, 
+  reviewReport, 
+  getActivityTemplates, 
+  getTemplateDetails, 
+  createActivityWithTemplate 
+} from '../controllers/counsellorController.js'
 import authCounsellor from '../middlewares/authCounsellor.js'
 
 const counsellorRouter = express.Router()
@@ -27,13 +56,8 @@ counsellorRouter.get('/client/:userId/sessions', authCounsellor, getClientSessio
 
 counsellorRouter.put('/session/:sessionId/start-call', authCounsellor, startCall);
 
-
-// counsellorRouter.post('/send-notification', authCounsellor, sendSessionNotification);
-// counsellorRouter.post('/session/:sessionId/reminder', authCounsellor, sendSessionReminder);
-
 counsellorRouter.post('/change-availability', authCounsellor, changeAvailability)
 counsellorRouter.post('/sessions/schedule', authCounsellor, scheduleSession)
-
  
 counsellorRouter.post('/sessions/:sessionId/join', authCounsellor, joinSession)
 
@@ -50,6 +74,20 @@ counsellorRouter.post('/session/:sessionId/notify', authCounsellor, async (req, 
   }
 });
 
-export default counsellorRouter 
+// Wellness Activities Routes
+counsellorRouter.get('/wellness/activities', authCounsellor, getActivities);    
+counsellorRouter.post('/wellness/activities', authCounsellor, createActivityWithTemplate);
+counsellorRouter.put('/wellness/activities/:activityId', authCounsellor, updateActivity);
+counsellorRouter.get('/wellness/activities/:activityId/participants', authCounsellor, getParticipants);
+
+// Add these routes to your existing counsellor router
+counsellorRouter.get('/wellness/templates', authCounsellor, getActivityTemplates);
+counsellorRouter.get('/wellness/templates/:activityType', authCounsellor, getTemplateDetails);
 
 
+// Moderation (reports)
+counsellorRouter.post('/report', authCounsellor, reportContent);
+counsellorRouter.get('/reports', authCounsellor, getReports);
+counsellorRouter.put('/reports/:reportId/review', authCounsellor, reviewReport);
+
+export default counsellorRouter

@@ -93,7 +93,6 @@ const { token, backendUrl } = useContext(AppContext)
   const handleCallNow = (phone) => {
     if (phone.includes("Text")) {
       // Simulate toast info
-      console.log("Open your messaging app and text HOME to 741741");
       alert("Open your messaging app and text HOME to 741741");
     } else {
       window.location.href = `tel:${phone.replace(/\D/g, '')}`;
@@ -104,7 +103,7 @@ const { token, backendUrl } = useContext(AppContext)
     <div className="min-h-screen pt-9">
 
       {/* Main Content Container */}
-      <div className="max-w-6xl mx-auto px-4 py-6">
+      <div className="px-4 py-6 max-mx-25">
         <div className="grid lg:grid-cols-12 gap-6">
           
           {/* Left Column - Emergency & Immediate Help */}
@@ -214,7 +213,7 @@ const { token, backendUrl } = useContext(AppContext)
             {/* Crisis Alert Form */}
             <div className="bg-white shadow-xl rounded-xl overflow-hidden">
               <div className="bg-gradient-to-r from-purple-50 to-blue-50 px-6 py-4 border-b border-gray-100">
-                <h2 className="text-xl font-bold text-gray-800">Connect with Our Crisis Team</h2>
+                <h2 className="text-xl font-bold text-blue-600">Connect with Our Crisis Team</h2>
                 <p className="text-gray-600 text-sm mt-1">
                   Our trained counselors will be notified immediately and will reach out to you.
                 </p>

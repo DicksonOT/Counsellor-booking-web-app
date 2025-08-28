@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken'
 import counsellorModel from '../models/counsellorModel.js'
 import validator from 'validator'
 import appointmentModel from '../models/appointmentModel.js'
-import assessmentModel from '../models/assessmentModel.js';
+import UserProgress from '../models/userProgressModel.js';
 import sessionModel from '../models/sessionModel.js'
 import userModel from '../models/userModel.js'
 import notificationModel from '../models/notificationModel.js'
@@ -11,6 +11,10 @@ import transporter from '../config/email.js';
 import { sessions } from '../config/websocket.js';
 import { WebSocket } from 'ws';
 import { v2 as cloudinary } from 'cloudinary';
+import WellnessActivity from '../models/activityModel.js'
+import { Report } from '../models/communityModel.js';
+import { sendActivityNotifications } from '../utils/utils.js'
+import { activityTemplates, validateActivityData, getActivityTemplate } from '../utils/activityTemplate.js'
 
 // API for counsellor register
 const registerCounsellor = async (req, res) => {
@@ -281,9 +285,9 @@ const updateProfile = async (req, res) => {
   }
 };
 
-// API for manually assessing users
+// API for manually assessing users (by counselor)
 const manualAssessment = async (req, res) => {
-  const counId = req.counId;
+  const counId = req.counId; 
   const { userId, score } = req.body;
 
   if (!userId || typeof score !== 'number') {
@@ -291,23 +295,30 @@ const manualAssessment = async (req, res) => {
   }
 
   try {
-    await assessmentModel.findOneAndUpdate(
-      { userId },
+    // Update UserProgress directly
+    const updatedProgress = await UserProgress.findOneAndUpdate(
+      { user: userId },
       {
-        $inc: { totalScore: score },
+        $inc: { wellnessPoints: score, totalScore: score },
         $push: {
-          scoreHistory: { score, source: 'manual', counId, date: new Date() },
+          scoreHistory: { score, source: 'manual', counId, date: new Date() }
         }
       },
       { new: true, upsert: true }
-    );
+    ).populate('user', 'name email');
 
-    return res.json({ success: true, message: `You scored with ${score} points` });
+    return res.json({ 
+      success: true, 
+      message: `User scored with ${score} points`,
+      progress: updatedProgress
+    });
+
   } catch (error) {
     console.log(error);
     return res.json({ success: false, message: error.message });
   }
 };
+
 
 // API for user profile
 const getUserProfile = async (req, res) => {
@@ -630,8 +641,6 @@ const joinSession = async (req, res) => {
   }
 };
 
-// =================== HELPER FUNCTIONS ===================
-
 // Send all session notifications
 const sendSessionNotifications = async (user, counselor, session) => {
   try {
@@ -800,6 +809,467 @@ const notifyUserInSession = async (userId, message, sessionData) => {
   }
 };
 
+// API to get all wellness activities created by counsellor
+const getActivities = async (req, res) => {
+  try {
+    const counId = req.counId;
+    
+    const activities = await WellnessActivity.find({ createdBy: counId })
+      .populate('participants', 'name email image')
+      .populate('createdBy', 'name')
+      .sort({ createdAt: -1 });
+
+    console.log(`Found ${activities.length} activities for counsellor ${counId}`);
+
+    res.json({ 
+      success: true, 
+      activities: activities || [] 
+    });
+  } catch (error) {
+    console.error('Get activities error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// API to create activity
+const createActivityWithTemplate = async (req, res) => {
+  try {
+    const { 
+      title, 
+      description, 
+      activityType, 
+      duration, 
+      difficulty, 
+      instructions, 
+      resources, 
+      startDate, 
+      endDate,
+      useTemplate = false
+    } = req.body;
+    const counId = req.counId;
+
+    console.log('Creating activity for counsellor:', counId);
+    console.log('Activity data:', { title, activityType, difficulty, useTemplate });
+
+    // Validation
+    if (!title || !description) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Title and description are required' 
+      });
+    }
+
+    if (!['daily_reflection', 'mood_checking', 'challenge', 'meditation', 'exercise', 'journaling'].includes(activityType)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid activity type' 
+      });
+    }
+
+    // Validate activity data
+    validateActivityData({ activityType, duration, startDate, endDate });
+
+    const template = getActivityTemplate(activityType);
+    
+    // Use template data if requested
+    let finalInstructions = instructions;
+    let finalResources = resources;
+    
+    if (useTemplate && template) {
+      if (!instructions || instructions.length === 0) {
+        finalInstructions = template.defaultInstructions;
+      }
+      if (!resources || resources.length === 0) {
+        finalResources = template.suggestedResources.map(res => res.url);
+      }
+    }
+
+    // Process resources to match schema
+    let processedResources = [];
+    if (finalResources && Array.isArray(finalResources)) {
+      processedResources = finalResources
+        .filter(res => res && res.trim())
+        .map((res, index) => ({
+          type: template?.suggestedResources[index]?.type || 'article',
+          url: res.trim(),
+          title: template?.suggestedResources[index]?.title || 'Resource'
+        }));
+    }
+
+    const activity = new WellnessActivity({
+      title: title.trim(),
+      description: description.trim(),
+      activityType,
+      duration: duration ? parseInt(duration) : template?.suggestedDuration || 30,
+      difficulty: difficulty || 'beginner',
+      instructions: finalInstructions ? finalInstructions.filter(inst => inst && inst.trim()) : [],
+      resources: processedResources,
+      startDate: startDate ? new Date(startDate) : new Date(),
+      endDate: endDate ? new Date(endDate) : null,
+      createdBy: counId,
+      isActive: true,
+      participantCount: 0,
+      // Add template-specific data
+      templateData: template ? {
+        promptQuestions: template.promptQuestions || [],
+        moodScale: template.moodScale || [],
+        techniques: template.techniques || [],
+        exerciseTypes: template.exerciseTypes || [],
+        journalPrompts: template.journalPrompts || [],
+        challengeTypes: template.challengeTypes || []
+      } : {}
+    });
+
+    await activity.save();
+
+    const counsellor = await counsellorModel.findById(counId, 'name email');
+
+    // Notify users in the activity's community
+    const users = await userModel.find({ community: activity.communityId }, 'name email');
+    await sendActivityNotifications(users, counsellor, activity, false);
+    
+    console.log('Activity created successfully:', activity._id);
+    
+    res.status(201).json({ 
+      success: true, 
+      activity,
+      template: template ? {
+        name: template.name,
+        suggestedDuration: template.suggestedDuration,
+        maxDuration: template.maxDuration
+      } : null,
+      message: 'Activity created successfully'
+    });
+  } catch (error) {
+    console.error('Create activity error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || 'Failed to create activity'
+    });
+  }
+};
+
+// API to get all activity templates
+const getActivityTemplates = async (req, res) => {
+  try {
+    const templates = Object.keys(activityTemplates).map(key => ({
+      type: key,
+      name: activityTemplates[key].name,
+      description: activityTemplates[key].description,
+      suggestedDuration: activityTemplates[key].suggestedDuration,
+      maxDuration: activityTemplates[key].maxDuration
+    }));
+
+    res.json({
+      success: true,
+      templates
+    });
+  } catch (error) {
+    console.error('Get templates error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to get activity templates'
+    });
+  }
+};
+
+// API to get specific template details
+const getTemplateDetails = async (req, res) => {
+  try {
+    const { activityType } = req.params;
+    const template = getActivityTemplate(activityType);
+
+    if (!template) {
+      return res.status(404).json({
+        success: false,
+        message: 'Template not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      template
+    });
+  } catch (error) {
+    console.error('Get template details error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to get template details'
+    });
+  }
+};
+
+// Update activity
+const updateActivity = async (req, res) => {
+  try {
+    const { activityId } = req.params;
+    const updates = { ...req.body };
+    const counId = req.counId;
+
+    console.log('Updating activity:', activityId, 'for counsellor:', counId);
+
+    // Process resources if provided
+    if (updates.resources && Array.isArray(updates.resources)) {
+      updates.resources = updates.resources
+        .filter(res => res && res.trim())
+        .map(res => ({
+          type: 'article',
+          url: res.trim(),
+          title: 'Resource'
+        }));
+    }
+
+    // Filter instructions
+    if (updates.instructions && Array.isArray(updates.instructions)) {
+      updates.instructions = updates.instructions.filter(inst => inst && inst.trim());
+    }
+
+    const activity = await WellnessActivity.findOneAndUpdate(
+      { _id: activityId, createdBy: counId },
+      updates,
+      { new: true, runValidators: true }
+    ).populate('createdBy', 'name');
+
+    if (!activity) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Activity not found or unauthorized' 
+      });
+    }
+
+  const counsellor = await counsellorModel.findById(counId, 'name email');
+
+// Populate participants so we have their emails
+await activity.populate('participants', 'name email');
+await sendActivityNotifications(activity.participants, counsellor, activity, true);
+
+
+    console.log('Activity updated successfully:', activity._id);
+
+    res.json({ 
+      success: true, 
+      activity,
+      message: 'Activity updated successfully'
+    });
+  } catch (error) {
+    console.error('Update activity error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || 'Failed to update activity'
+    });
+  }
+};
+
+// Get activity participants and completions
+const getParticipants = async (req, res) => {
+  try {
+    const { activityId } = req.params;
+    const counId = req.counId;
+
+    console.log('Getting participants for activity:', activityId);
+
+    const activity = await WellnessActivity.findOne({ 
+      _id: activityId, 
+      createdBy: counId 
+    })
+      .populate('participants', 'name email image')
+      .populate('completions.user', 'name email image');
+
+    if (!activity) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Activity not found or unauthorized' 
+      });
+    }
+
+    console.log(`Activity has ${activity.participants.length} participants and ${activity.completions.length} completions`);
+
+    res.json({
+      success: true,
+      activity: {
+        _id: activity._id,
+        title: activity.title,
+        participantCount: activity.participantCount
+      },
+      participants: activity.participants || [],
+      completions: activity.completions || []
+    });
+  } catch (error) {
+    console.error('Get participants error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || 'Failed to get participants'
+    });
+  }
+};
+
+// Report content (for counsellors to report inappropriate content)
+const reportContent = async (req, res) => {
+  try {
+    const { contentType, contentId, reason, description } = req.body;
+    const counId = req.counId;
+
+    console.log('Counsellor reporting content:', { contentType, contentId, reason });
+
+    if (!contentType || !contentId || !reason) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Content type, content ID, and reason are required' 
+      });
+    }
+
+    // Validate content type
+    if (!['post', 'comment', 'user'].includes(contentType)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid content type' 
+      });
+    }
+
+    // Validate reason
+    const validReasons = ['harassment', 'hate_speech', 'spam', 'inappropriate_content', 'crisis_concern', 'misinformation', 'other'];
+    if (!validReasons.includes(reason)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid report reason' 
+      });
+    }
+
+    const report = new Report({
+      reporter: counId,
+      reportedContent: { 
+        contentType, 
+        contentId: new mongoose.Types.ObjectId(contentId)
+      },
+      reason,
+      description: description || '',
+      status: 'pending'
+    });
+
+    await report.save();
+    
+    console.log('Report submitted successfully:', report._id);
+    
+    res.status(201).json({ 
+      success: true, 
+      message: 'Report submitted successfully',
+      reportId: report._id
+    });
+  } catch (error) {
+    console.error('Report content error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || 'Failed to submit report'
+    });
+  }
+};
+
+// Get reports (for counsellors to review)
+const getReports = async (req, res) => {
+  try {
+    const { status = 'pending', page = 1, limit = 10 } = req.query;
+
+    console.log('Getting reports with status:', status);
+
+    const validStatuses = ['pending', 'reviewed', 'resolved', 'dismissed'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid status filter' 
+      });
+    }
+
+    const reports = await Report.find({ status })
+      .populate('reporter', 'name email')
+      .populate('reviewedBy', 'name')
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit))
+      .skip((parseInt(page) - 1) * parseInt(limit));
+
+    const totalReports = await Report.countDocuments({ status });
+
+    console.log(`Found ${reports.length} reports out of ${totalReports} total`);
+
+    res.json({ 
+      success: true, 
+      reports: reports || [],
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(totalReports / parseInt(limit)),
+        totalReports,
+        hasMore: parseInt(page) < Math.ceil(totalReports / parseInt(limit))
+      }
+    });
+  } catch (error) {
+    console.error('Get reports error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || 'Failed to get reports'
+    });
+  }
+};
+
+// Review report (for counsellors to take action on reports)
+const reviewReport = async (req, res) => {
+  try {
+    const { reportId } = req.params;
+    const { actionTaken, reviewNotes } = req.body;
+    const counId = req.counId;
+
+    console.log('Reviewing report:', reportId, 'action:', actionTaken);
+
+    if (!actionTaken) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Action taken is required' 
+      });
+    }
+
+    // Validate action
+    const validActions = ['none', 'warning', 'content_removed', 'user_suspended', 'escalated'];
+    if (!validActions.includes(actionTaken)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid action type' 
+      });
+    }
+
+    const report = await Report.findByIdAndUpdate(
+      reportId,
+      {
+        status: 'reviewed',
+        reviewedBy: counId,
+        actionTaken,
+        reviewNotes: reviewNotes || ''
+      },
+      { new: true }
+    )
+    .populate('reporter', 'name email')
+    .populate('reviewedBy', 'name');
+
+    if (!report) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Report not found' 
+      });
+    }
+
+    console.log('Report reviewed successfully:', report._id);
+
+    res.json({ 
+      success: true, 
+      report,
+      message: 'Report reviewed successfully'
+    });
+  } catch (error) {
+    console.error('Review report error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || 'Failed to review report'
+    });
+  }
+};
+
 export {
   registerCounsellor,
   counsellorLogin,
@@ -819,5 +1289,16 @@ export {
   updateSessionStatus,
   startCall,
   scheduleSession,
-  joinSession
+  joinSession, 
+  createActivityWithTemplate,
+  getParticipants,
+  getReports,
+  reportContent,
+  updateActivity,
+  reviewReport, 
+  getActivities,
+  createInAppNotification,
+  sendRealTimeNotification,
+  getActivityTemplates,
+  getTemplateDetails
 };

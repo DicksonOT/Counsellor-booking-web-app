@@ -18,6 +18,10 @@ import Welcome from './components/Welcome'
 import ApproveCounselors from './pages/admin/ApproveCounselors'
 import UserProfile from './components/ClientProfile'
 import TherapySession from './pages/counsellor/TherapySession'
+import Programs from './pages/admin/Programs'
+import Communities from './pages/counsellor/Communities'
+import CreateCommunityForm from './pages/admin/CreateCommunity'
+import AdminDonations from './pages/admin/Donations'
 
 const App = () => {
 
@@ -42,6 +46,9 @@ const App = () => {
             <Route path='/all-appointments' element ={<AppointmentData />} />
             <Route path='/all-counsellors' element={<CounsellorsList/>} />
             <Route path='/approve-counsellors' element={<ApproveCounselors/>} />
+            <Route path='/programs' element={<Programs/>} />
+            <Route path='/create-community' element={<CreateCommunityForm/>} />
+            <Route path='/donations' element={<AdminDonations />} />
 
             {/* Counsellor route */}
             <Route path='/counsellor-dashboard' element={<CounsellorDashboard/>} />
@@ -49,6 +56,7 @@ const App = () => {
             <Route path='/counsellor-profile' element={<CounsellorProfile/>} />
             <Route path="/counsellor/client-profile/:userId" element={<UserProfile />} />
             <Route path="/session/:roomId" element= {<TherapySession/>} />
+            <Route path="/community" element= {<Communities/>} />
           </Routes>
         </div>
       </div>

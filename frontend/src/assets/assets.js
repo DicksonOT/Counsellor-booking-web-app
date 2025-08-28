@@ -139,6 +139,1111 @@ export const assets = {
     elorm
 }
 
+
+// DonationUtils
+
+export const donationUtils = {
+  // Format currency consistently
+  formatCurrency: (amount, currency = 'USD') => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    }).format(amount);
+  },
+
+  // Calculate sessions funded
+  calculateSessionsFunded: (amount, sessionCost = 50) => {
+    return Math.floor(amount / sessionCost);
+  },
+
+  // Format date for display
+  formatDate: (dateString, options = {}) => {
+    const defaultOptions = {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    };
+    
+    return new Date(dateString).toLocaleDateString('en-US', {
+      ...defaultOptions,
+      ...options
+    });
+  },
+
+  // Get status styling
+  getStatusStyling: (status) => {
+    const styles = {
+      completed: {
+        bg: 'bg-green-100',
+        text: 'text-green-800',
+        border: 'border-green-200'
+      },
+      active: {
+        bg: 'bg-green-100',
+        text: 'text-green-800',
+        border: 'border-green-200'
+      },
+      pending: {
+        bg: 'bg-yellow-100',
+        text: 'text-yellow-800',
+        border: 'border-yellow-200'
+      },
+      failed: {
+        bg: 'bg-red-100',
+        text: 'text-red-800',
+        border: 'border-red-200'
+      },
+      cancelled: {
+        bg: 'bg-red-100',
+        text: 'text-red-800',
+        border: 'border-red-200'
+      },
+      default: {
+        bg: 'bg-gray-100',
+        text: 'text-gray-800',
+        border: 'border-gray-200'
+      }
+    };
+    
+    return styles[status] || styles.default;
+  },
+
+  // Validate donation amount
+  validateDonationAmount: (amount, minAmount = 5) => {
+    const numAmount = parseFloat(amount);
+    
+    if (isNaN(numAmount)) {
+      return { valid: false, error: 'Please enter a valid amount' };
+    }
+    
+    if (numAmount < minAmount) {
+      return { valid: false, error: `Minimum donation amount is $${minAmount}` };
+    }
+    
+    if (numAmount > 50000) {
+      return { valid: false, error: 'Maximum donation amount is $50,000. Please contact us for larger donations.' };
+    }
+    
+    return { valid: true };
+  },
+
+  // Validate email
+  validateEmail: (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    
+    if (!email.trim()) {
+      return { valid: false, error: 'Email address is required' };
+    }
+    
+    if (!emailRegex.test(email)) {
+      return { valid: false, error: 'Please enter a valid email address' };
+    }
+    
+    return { valid: true };
+  },
+
+  // Generate donation receipt content
+  generateReceiptContent: (donation) => {
+    return `
+DONATION RECEIPT
+================
+
+Thank you for your generous donation!
+
+Donation Details:
+- ID: ${donation.id || donation._id}
+- Amount: ${donationUtils.formatCurrency(donation.amount)}
+- Type: ${donation.type === 'monthly' ? 'Monthly Recurring' : 'One-time'}
+- Date: ${donationUtils.formatDate(donation.createdAt)}
+- Status: ${donation.status}
+
+Donor Information:
+- Name: ${donation.donorName}
+- Email: ${donation.donorEmail}
+
+Tax Information:
+- This donation is tax-deductible
+- Tax ID: 12-3456789
+- Receipt Date: ${donationUtils.formatDate(new Date())}
+
+Impact Statement:
+Your donation of ${donationUtils.formatCurrency(donation.amount)} can provide 
+${donationUtils.calculateSessionsFunded(donation.amount)} free counseling sessions 
+to individuals who need mental health support but cannot afford it.
+
+${donation.type === 'monthly' ? 
+  `As a monthly donor, you will help provide ${donationUtils.calculateSessionsFunded(donation.amount) * 12} sessions annually!` : 
+  ''}
+
+Thank you for supporting mental health care accessibility!
+
+---
+Mental Health Support Foundation
+Contact: support@mentalhealthfoundation.org
+Website: www.mentalhealthfoundation.org
+    `.trim();
+  },
+
+  // Download file helper
+  downloadFile: (content, filename, mimeType = 'text/plain') => {
+    const element = document.createElement('a');
+    const file = new Blob([content], { type: mimeType });
+    element.href = URL.createObjectURL(file);
+    element.download = filename;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  },
+
+  // Calculate next charge date for monthly donations
+  calculateNextChargeDate: (startDate, monthsToAdd = 1) => {
+    const date = new Date(startDate);
+    date.setMonth(date.getMonth() + monthsToAdd);
+    return date;
+  },
+
+  // Filter donations by criteria
+  filterDonations: (donations, filters) => {
+    let filtered = [...donations];
+
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      filtered = filtered.filter(donation => 
+        (donation.id || donation._id).toLowerCase().includes(searchLower) ||
+        donation.amount.toString().includes(filters.search) ||
+        donation.donorName?.toLowerCase().includes(searchLower) ||
+        donation.donorEmail?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    if (filters.status && filters.status !== 'all') {
+      filtered = filtered.filter(donation => donation.status === filters.status);
+    }
+
+    if (filters.type && filters.type !== 'all') {
+      filtered = filtered.filter(donation => donation.type === filters.type);
+    }
+
+    if (filters.dateRange && filters.dateRange !== 'all') {
+      const now = new Date();
+      let cutoffDate;
+
+      switch (filters.dateRange) {
+        case '7days':
+          cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case '30days':
+          cutoffDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          break;
+        case '90days':
+          cutoffDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+          break;
+        case '1year':
+          cutoffDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+          break;
+        default:
+          cutoffDate = null;
+      }
+
+      if (cutoffDate) {
+        filtered = filtered.filter(donation => 
+          new Date(donation.createdAt) >= cutoffDate
+        );
+      }
+    }
+
+    return filtered;
+  },
+
+  // Calculate donation statistics
+  calculateDonationStats: (donations) => {
+    return donations.reduce((stats, donation) => {
+      if (donation.status === 'completed' || donation.status === 'active') {
+        stats.totalAmount += donation.amount;
+        stats.totalCount += 1;
+
+        if (donation.type === 'monthly') {
+          stats.monthlyAmount += donation.amount;
+          stats.monthlyCount += 1;
+        } else {
+          stats.oneTimeAmount += donation.amount;
+          stats.oneTimeCount += 1;
+        }
+
+        stats.totalSessions += donationUtils.calculateSessionsFunded(donation.amount);
+      }
+
+      return stats;
+    }, {
+      totalAmount: 0,
+      totalCount: 0,
+      monthlyAmount: 0,
+      monthlyCount: 0,
+      oneTimeAmount: 0,
+      oneTimeCount: 0,
+      totalSessions: 0,
+      averageAmount: 0
+    });
+  },
+
+  // Export donations to CSV
+  exportDonationsToCSV: (donations, filename = 'donations-export.csv') => {
+    const headers = ['Date', 'Amount', 'Type', 'Status', 'Donor Name', 'Donor Email', 'ID', 'Sessions Funded'];
+    
+    const csvContent = [
+      headers.join(','),
+      ...donations.map(donation => [
+        donationUtils.formatDate(donation.createdAt, { hour: undefined, minute: undefined }),
+        donation.amount,
+        donation.type,
+        donation.status,
+        donation.donorName || 'Anonymous',
+        donation.donorEmail || 'N/A',
+        donation.id || donation._id,
+        donationUtils.calculateSessionsFunded(donation.amount)
+      ].join(','))
+    ].join('\n');
+
+    donationUtils.downloadFile(csvContent, filename, 'text/csv');
+  },
+
+  // Share donation success
+  shareDonation: async (donation) => {
+    const shareText = `I just donated ${donationUtils.formatCurrency(donation.amount)} to support mental health services! This will help fund ${donationUtils.calculateSessionsFunded(donation.amount)} free counseling sessions for those in need.`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Supporting Mental Health',
+          text: shareText,
+          url: window.location.origin
+        });
+        return { success: true };
+      } catch (error) {
+        return { success: false, error: error.message };
+      }
+    } else {
+      // Fallback for browsers without Web Share API
+      try {
+        await navigator.clipboard.writeText(`${shareText} ${window.location.origin}`);
+        return { success: true, message: 'Copied to clipboard!' };
+      } catch (error) {
+        console.log(error)
+        return { success: false, error: 'Failed to copy to clipboard' };
+      }
+    }
+  }
+};
+
+// React Hook for donation management
+import { useState, useCallback } from 'react';
+import { useContext } from 'react';
+import { AppContext } from '../context/AppContext';
+
+export const useDonationManagement = () => {
+  const [donations, setDonations] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const refreshDonations = useCallback(async (getDonationHistory) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await getDonationHistory();
+      if (response.success) {
+        setDonations(response.donations || []);
+      } else {
+        setError(response.message || 'Failed to fetch donations');
+      }
+    } catch (err) {
+      setError(err.message || 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const updateDonationStatus = useCallback((donationId, newStatus) => {
+    setDonations(prev => 
+      prev.map(donation => 
+        (donation.id === donationId || donation._id === donationId)
+          ? { ...donation, status: newStatus }
+          : donation
+      )
+    );
+  }, []);
+
+  return {
+    donations,
+    loading,
+    error,
+    refreshDonations,
+    updateDonationStatus,
+    stats: donationUtils.calculateDonationStats(donations)
+  };
+};
+
+// Payment status verification component
+export const PaymentStatusVerifier = ({ sessionId, onVerified, onError }) => {
+  const [isVerifying, setIsVerifying] = useState(false);
+  const { verifyDonationPayment } = useContext(AppContext);
+
+  const verifyPayment = useCallback(async () => {
+    if (!sessionId || isVerifying) return;
+
+    setIsVerifying(true);
+    
+    try {
+      const response = await verifyDonationPayment(sessionId);
+      
+      if (response.success) {
+        onVerified?.(response.donation);
+      } else {
+        onError?.(response.message || 'Payment verification failed');
+      }
+    } catch (error) {
+      onError?.(error.message || 'An error occurred during verification');
+    } finally {
+      setIsVerifying(false);
+    }
+  }, [sessionId, isVerifying, verifyDonationPayment, onVerified, onError]);
+
+  return {
+    verifyPayment,
+    isVerifying
+  };
+};
+
+// Donation form validation hook
+export const useDonationForm = () => {
+  const [formData, setFormData] = useState({
+    amount: '',
+    customAmount: '',
+    isCustom: false,
+    type: 'one-time',
+    donorName: '',
+    donorEmail: ''
+  });
+
+  const [errors, setErrors] = useState({});
+
+  const updateField = useCallback((field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Clear error when field is updated
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  }, [errors]);
+
+  const validateForm = useCallback(() => {
+    const newErrors = {};
+    
+    const currentAmount = formData.isCustom ? formData.customAmount : formData.amount;
+    const amountValidation = donationUtils.validateDonationAmount(currentAmount);
+    if (!amountValidation.valid) {
+      newErrors.amount = amountValidation.error;
+    }
+
+    if (!formData.donorName.trim()) {
+      newErrors.donorName = 'Name is required';
+    }
+
+    const emailValidation = donationUtils.validateEmail(formData.donorEmail);
+    if (!emailValidation.valid) {
+      newErrors.donorEmail = emailValidation.error;
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }, [formData]);
+
+  const getCurrentAmount = useCallback(() => {
+    return formData.isCustom ? formData.customAmount : formData.amount;
+  }, [formData.isCustom, formData.customAmount, formData.amount]);
+
+  return {
+    formData,
+    errors,
+    updateField,
+    validateForm,
+    getCurrentAmount,
+    isValid: Object.keys(errors).length === 0 && getCurrentAmount() && formData.donorName && formData.donorEmail
+  };
+};
+
+ export const resources = [
+    // Depression Resources
+    {
+      id: 1,
+      title: "Understanding Depression: A Complete Guide",
+      type: "book",
+      category: "depression",
+      duration: "15 mins",
+      rating: 4.7,
+      views: 2341,
+      description: "Learn about symptoms, causes, and treatment options for depression.",
+      tags: ["depression", "mental health", "treatment"],
+      featured: true,
+      viewLink: "https://example.com/depression-guide",
+      downloadLink: null
+    },
+    {
+      id: 2,
+      title: "Depression Self-Assessment Quiz",
+      type: "download",
+      category: "depression",
+      duration: "PDF",
+      rating: 4.8,
+      views: 1892,
+      description: "Professional screening tool to help identify depression symptoms.",
+      tags: ["depression", "assessment", "quiz"],
+      new: true,
+      viewLink: "https://example.com/depression-quiz",
+      downloadLink: "https://example.com/download/depression-quiz.pdf"
+    },
+    {
+      id: 3,
+      title: "Overcoming Depression: Real Stories",
+      type: "audio",
+      category: "depression",
+      duration: "25 mins",
+      rating: 4.6,
+      views: 1456,
+      description: "Inspiring recovery stories and practical advice from mental health experts.",
+      tags: ["depression", "recovery", "stories"],
+      viewLink: "https://example.com/depression-stories",
+      downloadLink: null
+    },
+    {
+      id: 4,
+      title: "Daily Mood Tracking Template",
+      type: "download",
+      category: "depression",
+      duration: "PDF",
+      rating: 4.5,
+      views: 967,
+      description: "Track your mood patterns and identify triggers with this daily log.",
+      tags: ["mood", "tracking", "template"],
+      viewLink: "https://example.com/mood-tracker",
+      downloadLink: "https://example.com/download/mood-tracker.pdf"
+    },
+
+    // Anxiety & Stress Resources
+    {
+      id: 5,
+      title: "Anxiety Relief Techniques",
+      type: "infographic",
+      category: "anxiety",
+      duration: "Quick view",
+      rating: 4.8,
+      views: 1567,
+      description: "Visual guide to breathing exercises and grounding techniques.",
+      tags: ["anxiety", "breathing", "techniques"],
+      trending: true,
+      viewLink: "https://example.com/anxiety-techniques",
+      downloadLink: "https://example.com/download/anxiety-infographic.pdf"
+    },
+    {
+      id: 6,
+      title: "CBT Thought Record Worksheet",
+      type: "download",
+      category: "anxiety",
+      duration: "PDF",
+      rating: 4.9,
+      views: 2156,
+      description: "Cognitive behavioral therapy worksheet for challenging negative thoughts.",
+      tags: ["CBT", "thoughts", "worksheet"],
+      new: true,
+      viewLink: "https://example.com/cbt-worksheet",
+      downloadLink: "https://example.com/download/cbt-worksheet.pdf"
+    },
+    {
+      id: 7,
+      title: "Managing Panic Attacks",
+      type: "video",
+      category: "anxiety",
+      duration: "12 mins",
+      rating: 4.7,
+      views: 1834,
+      description: "Learn immediate techniques to manage and reduce panic attack intensity.",
+      tags: ["panic", "anxiety", "emergency"],
+      viewLink: "https://example.com/panic-attacks",
+      downloadLink: null
+    },
+    {
+      id: 8,
+      title: "Stress Management Workbook",
+      type: "download",
+      category: "anxiety",
+      duration: "PDF",
+      rating: 4.6,
+      views: 1245,
+      description: "Comprehensive workbook with exercises and strategies for stress reduction.",
+      tags: ["stress", "workbook", "exercises"],
+      viewLink: "https://example.com/stress-workbook",
+      downloadLink: "https://example.com/download/stress-workbook.pdf"
+    },
+
+    // Sleep Health Resources
+    {
+      id: 9,
+      title: "Sleep Hygiene Checklist",
+      type: "download",
+      category: "sleep",
+      duration: "PDF",
+      rating: 4.6,
+      views: 789,
+      description: "Downloadable checklist to improve your sleep quality and bedtime routine.",
+      tags: ["sleep", "hygiene", "checklist"],
+      new: true,
+      viewLink: "https://example.com/sleep-checklist",
+      downloadLink: "https://example.com/download/sleep-checklist.pdf"
+    },
+    {
+      id: 10,
+      title: "Guided Sleep Meditation",
+      type: "audio",
+      category: "sleep",
+      duration: "20 mins",
+      rating: 4.8,
+      views: 2103,
+      description: "Relaxing meditation to help you fall asleep naturally and peacefully.",
+      tags: ["sleep", "meditation", "relaxation"],
+      trending: true,
+      viewLink: "https://example.com/sleep-meditation",
+      downloadLink: null
+    },
+    {
+      id: 11,
+      title: "Understanding Sleep Disorders",
+      type: "article",
+      category: "sleep",
+      duration: "7 min read",
+      rating: 4.5,
+      views: 1432,
+      description: "Comprehensive guide to common sleep disorders and treatment options.",
+      tags: ["sleep disorders", "insomnia", "treatment"],
+      viewLink: "https://example.com/sleep-disorders",
+      downloadLink: null
+    },
+    {
+      id: 12,
+      title: "Sleep Schedule Template",
+      type: "download",
+      category: "sleep",
+      duration: "PDF",
+      rating: 4.4,
+      views: 876,
+      description: "Printable template to track and optimize your sleep patterns.",
+      tags: ["sleep schedule", "template", "tracking"],
+      viewLink: "https://example.com/sleep-template",
+      downloadLink: "https://example.com/download/sleep-template.pdf"
+    },
+
+    // Relationships Resources
+    {
+      id: 13,
+      title: "Building Healthy Relationships",
+      type: "article",
+      category: "relationships",
+      duration: "8 min read",
+      rating: 4.5,
+      views: 934,
+      description: "Communication strategies and boundary-setting in relationships.",
+      tags: ["relationships", "communication", "boundaries"],
+      viewLink: "https://example.com/healthy-relationships",
+      downloadLink: null
+    },
+    {
+      id: 14,
+      title: "Conflict Resolution Guide",
+      type: "article",
+      category: "relationships",
+      duration: "18 mins",
+      rating: 4.7,
+      views: 1567,
+      description: "Learn effective techniques for resolving conflicts in any relationship.",
+      tags: ["conflict", "resolution", "communication"],
+      featured: true,
+      viewLink: "https://www.crnhq.org/",
+      downloadLink: null
+    },
+    {
+      id: 15,
+      title: "Relationship Assessment Tool",
+      type: "download",
+      category: "relationships",
+      duration: "PDF",
+      rating: 4.6,
+      views: 723,
+      description: "Evaluate the health of your relationships with this comprehensive tool.",
+      tags: ["relationship", "assessment", "evaluation"],
+      viewLink: "https://example.com/relationship-assessment",
+      downloadLink: "https://example.com/download/relationship-assessment.pdf"
+    },
+    {
+      id: 16,
+      title: "Love Languages Explained",
+      type: "infographic",
+      category: "relationships",
+      duration: "Quick view",
+      rating: 4.8,
+      views: 2145,
+      description: "Visual guide to understanding and applying the five love languages.",
+      tags: ["love languages", "relationships", "communication"],
+      viewLink: "https://example.com/love-languages",
+      downloadLink: "https://example.com/download/love-languages.pdf"
+    },
+
+    // Mindfulness & Growth Resources
+    {
+      id: 17,
+      title: "Mindful Morning Routine",
+      type: "audio",
+      category: "mindfulness",
+      duration: "10 mins",
+      rating: 4.9,
+      views: 856,
+      description: "Start your day with intention through guided meditation and mindfulness.",
+      tags: ["meditation", "morning", "routine"],
+      trending: true,
+      viewLink: "https://example.com/morning-routine",
+      downloadLink: null
+    },
+    {
+      id: 18,
+      title: "Gratitude Journal Template",
+      type: "download",
+      category: "mindfulness",
+      duration: "PDF",
+      rating: 4.7,
+      views: 1234,
+      description: "Daily gratitude practice template to cultivate positivity and awareness.",
+      tags: ["gratitude", "journal", "mindfulness"],
+      new: true,
+      viewLink: "https://example.com/gratitude-journal",
+      downloadLink: "https://example.com/download/gratitude-journal.pdf"
+    },
+    {
+      id: 19,
+      title: "Mindfulness for Beginners",
+      type: "video",
+      category: "mindfulness",
+      duration: "22 mins",
+      rating: 4.6,
+      views: 1789,
+      description: "Introduction to mindfulness practices for stress reduction and self-awareness.",
+      tags: ["mindfulness", "beginner", "meditation"],
+      featured: true,
+      viewLink: "https://www.youtube.com/watch?v=NxYFxjZBqHg",
+      downloadLink: null
+    },
+    {
+      id: 20,
+      title: "Personal Growth Planner",
+      type: "download",
+      category: "mindfulness",
+      duration: "PDF",
+      rating: 4.8,
+      views: 1456,
+      description: "Comprehensive planner for setting and achieving personal development goals.",
+      tags: ["growth", "planning", "goals"],
+      viewLink: "https://example.com/growth-planner",
+      downloadLink: "https://example.com/download/growth-planner.pdf"
+    },
+
+    // Workplace Mental Health Resources
+    {
+      id: 21,
+      title: "Preventing Workplace Burnout",
+      type: "video",
+      category: "workplace",
+      duration: "12 mins",
+      rating: 4.7,
+      views: 1123,
+      description: "Recognize early signs and implement strategies to prevent burnout.",
+      tags: ["burnout", "workplace", "stress"],
+      featured: true,
+      viewLink: "https://www.youtube.com/watch?v=smjGAcyqDnk&t=44s",
+      downloadLink: null
+    },
+    {
+      id: 22,
+      title: "Work-Life Balance Assessment",
+      type: "download",
+      category: "workplace",
+      duration: "PDF",
+      rating: 4.6,
+      views: 892,
+      description: "Evaluate and improve your work-life balance with this self-assessment tool.",
+      tags: ["work-life", "balance", "assessment"],
+      viewLink: "https://example.com/work-life-balance",
+      downloadLink: "https://example.com/download/work-life-assessment.pdf"
+    },
+    {
+      id: 23,
+      title: "Managing Workplace Anxiety",
+      type: "article",
+      category: "workplace",
+      duration: "6 min read",
+      rating: 4.5,
+      views: 1034,
+      description: "Practical strategies for dealing with anxiety in professional environments.",
+      tags: ["workplace", "anxiety", "stress"],
+      trending: true,
+      viewLink: "https://example.com/workplace-anxiety",
+      downloadLink: null
+    },
+    {
+      id: 24,
+      title: "Productivity & Mental Health Guide",
+      type: "download",
+      category: "workplace",
+      duration: "PDF",
+      rating: 4.8,
+      views: 1567,
+      description: "Balance productivity with mental well-being in your professional life.",
+      tags: ["productivity", "mental health", "work"],
+      viewLink: "https://example.com/productivity-guide",
+      downloadLink: "https://example.com/download/productivity-guide.pdf"
+    },
+
+    // Youth/Student Resources (Expanded)
+    {
+      id: 25,
+      title: "10 Ways to Reduce Stress Before Exams",
+      type: "article",
+      category: "youth",
+      duration: "5 min read",
+      rating: 4.8,
+      views: 1234,
+      description: "Evidence-based strategies to manage exam anxiety and perform your best.",
+      tags: ["stress", "exams", "students"],
+      featured: true,
+      viewLink: "hhttps://www.uwslondon.ac.uk/blog/complete-guide-to-stress-and-time-management-for-students/",
+      downloadLink: null
+    },
+    {
+      id: 26,
+      title: "Student Mental Health Toolkit",
+      type: "download",
+      category: "youth",
+      duration: "PDF",
+      rating: 4.9,
+      views: 2234,
+      description: "Comprehensive resource pack for students dealing with academic pressure.",
+      tags: ["student", "toolkit", "mental health"],
+      new: true,
+      viewLink: "https://example.com/student-toolkit",
+      downloadLink: "https://example.com/download/student-toolkit.pdf"
+    },
+    {
+      id: 27,
+      title: "Building Self-Esteem in Teens",
+      type: "video",
+      category: "youth",
+      duration: "16 mins",
+      rating: 4.6,
+      views: 1678,
+      description: "Guidance for teenagers to develop healthy self-esteem and confidence.",
+      tags: ["self-esteem", "teenagers", "confidence"],
+      viewLink: "https://example.com/teen-self-esteem",
+      downloadLink: null
+    },
+    {
+      id: 28,
+      title: "Study Schedule Template",
+      type: "download",
+      category: "youth",
+      duration: "PDF",
+      rating: 4.4,
+      views: 945,
+      description: "Organize your study time effectively with this customizable template.",
+      tags: ["study", "schedule", "organization"],
+      viewLink: "https://example.com/study-template",
+      downloadLink: "https://example.com/download/study-template.pdf"
+    },
+    {
+      id: 29,
+      title: "Overcoming Social Anxiety at School",
+      type: "video",
+      category: "youth",
+      duration: "14 mins",
+      rating: 4.7,
+      views: 1456,
+      description: "Practical tips for students struggling with social interactions and presentations.",
+      tags: ["social anxiety", "school", "presentations"],
+      trending: true,
+      viewLink: "https://example.com/social-anxiety-school",
+      downloadLink: null
+    },
+    {
+      id: 30,
+      title: "College Transition Guide",
+      type: "article",
+      category: "youth",
+      duration: "9 min read",
+      rating: 4.5,
+      views: 1123,
+      description: "Navigate the emotional challenges of transitioning to college life.",
+      tags: ["college", "transition", "independence"],
+      viewLink: "https://example.com/college-transition",
+      downloadLink: null
+    },
+    {
+      id: 31,
+      title: "Academic Pressure Worksheet",
+      type: "download",
+      category: "youth",
+      duration: "PDF",
+      rating: 4.6,
+      views: 834,
+      description: "Identify and manage sources of academic stress with guided exercises.",
+      tags: ["academic pressure", "worksheet", "stress"],
+      viewLink: "https://example.com/academic-pressure",
+      downloadLink: "https://example.com/download/academic-pressure.pdf"
+    },
+    {
+      id: 32,
+      title: "Time Management for Students",
+      type: "infographic",
+      category: "youth",
+      duration: "Quick view",
+      rating: 4.8,
+      views: 1789,
+      description: "Visual guide to effective time management techniques for academic success.",
+      tags: ["time management", "productivity", "students"],
+      viewLink: "https://example.com/time-management-students",
+      downloadLink: "https://example.com/download/time-management.pdf"
+    },
+
+    // Workplace Mental Health Resources (Expanded)
+    {
+      id: 34,
+      title: "Work-Life Balance Assessment",
+      type: "download",
+      category: "workplace",
+      duration: "PDF",
+      rating: 4.6,
+      views: 892,
+      description: "Evaluate and improve your work-life balance with this self-assessment tool.",
+      tags: ["work-life", "balance", "assessment"],
+      viewLink: "https://example.com/work-life-balance",
+      downloadLink: "https://example.com/download/work-life-assessment.pdf"
+    },
+    {
+      id: 35,
+      title: "Managing Workplace Anxiety",
+      type: "article",
+      category: "workplace",
+      duration: "6 min read",
+      rating: 4.5,
+      views: 1034,
+      description: "Practical strategies for dealing with anxiety in professional environments.",
+      tags: ["workplace", "anxiety", "stress"],
+      trending: true,
+      viewLink: "https://example.com/workplace-anxiety",
+      downloadLink: null
+    },
+    {
+      id: 36,
+      title: "Productivity & Mental Health Guide",
+      type: "download",
+      category: "workplace",
+      duration: "PDF",
+      rating: 4.8,
+      views: 1567,
+      description: "Balance productivity with mental well-being in your professional life.",
+      tags: ["productivity", "mental health", "work"],
+      viewLink: "https://example.com/productivity-guide",
+      downloadLink: "https://example.com/download/productivity-guide.pdf"
+    },
+    {
+      id: 37,
+      title: "Dealing with Difficult Colleagues",
+      type: "video",
+      category: "workplace",
+      duration: "18 mins",
+      rating: 4.6,
+      views: 1345,
+      description: "Professional strategies for handling challenging workplace relationships.",
+      tags: ["colleagues", "workplace conflict", "communication"],
+      viewLink: "https://example.com/difficult-colleagues",
+      downloadLink: null
+    },
+    {
+      id: 38,
+      title: "Remote Work Mental Health Tips",
+      type: "article",
+      category: "workplace",
+      duration: "7 min read",
+      rating: 4.7,
+      views: 1678,
+      description: "Maintain mental wellness while working from home or remotely.",
+      tags: ["remote work", "isolation", "mental health"],
+      new: true,
+      viewLink: "https://example.com/remote-work-tips",
+      downloadLink: null
+    },
+    {
+      id: 39,
+      title: "Stress Management at Work Toolkit",
+      type: "download",
+      category: "workplace",
+      duration: "PDF",
+      rating: 4.8,
+      views: 1234,
+      description: "Complete toolkit with exercises and strategies for workplace stress.",
+      tags: ["stress management", "workplace", "toolkit"],
+      viewLink: "https://example.com/workplace-stress-toolkit",
+      downloadLink: "https://example.com/download/workplace-stress-toolkit.pdf"
+    },
+    {
+      id: 40,
+      title: "Leadership and Mental Health",
+      type: "audio",
+      category: "workplace",
+      duration: "22 mins",
+      rating: 4.5,
+      views: 987,
+      description: "How to lead teams while prioritizing mental health and well-being.",
+      tags: ["leadership", "team management", "mental health"],
+      viewLink: "https://example.com/leadership-mental-health",
+      downloadLink: null
+    },
+
+    // Relationships Resources (Expanded)
+    {
+      id: 41,
+      title: "Building Healthy Relationships",
+      type: "article",
+      category: "relationships",
+      duration: "8 min read",
+      rating: 4.5,
+      views: 934,
+      description: "Communication strategies and boundary-setting in relationships.",
+      tags: ["relationships", "communication", "boundaries"],
+      viewLink: "https://example.com/healthy-relationships",
+      downloadLink: null
+    },
+    {
+      id: 42,
+      title: "Conflict Resolution Guide",
+      type: "video",
+      category: "relationships",
+      duration: "18 mins",
+      rating: 4.7,
+      views: 1567,
+      description: "Learn effective techniques for resolving conflicts in any relationship.",
+      tags: ["conflict", "resolution", "communication"],
+      featured: true,
+      viewLink: "https://example.com/conflict-resolution",
+      downloadLink: null
+    },
+    {
+      id: 43,
+      title: "Relationship Assessment Tool",
+      type: "download",
+      category: "relationships",
+      duration: "PDF",
+      rating: 4.6,
+      views: 723,
+      description: "Evaluate the health of your relationships with this comprehensive tool.",
+      tags: ["relationship", "assessment", "evaluation"],
+      viewLink: "https://www.wvdhhr.org/wvhomevisitation/forms/Relationship_Assessment_Tool.pdf",
+      downloadLink: "https://www.wvdhhr.org/wvhomevisitation/forms/Relationship_Assessment_Tool.pdf"
+    },
+    {
+      id: 44,
+      title: "Love Languages Explained",
+      type: "infographic",
+      category: "relationships",
+      duration: "Quick view",
+      rating: 4.8,
+      views: 2145,
+      description: "Visual guide to understanding and applying the five love languages.",
+      tags: ["love languages", "relationships", "communication"],
+      viewLink: "https://example.com/love-languages",
+      downloadLink: "https://example.com/download/love-languages.pdf"
+    },
+    {
+      id: 45,
+      title: "Dealing with Toxic Relationships",
+      type: "video",
+      category: "relationships",
+      duration: "20 mins",
+      rating: 4.9,
+      views: 2456,
+      description: "Recognize signs of toxic relationships and learn how to protect yourself.",
+      tags: ["toxic relationships", "red flags", "self-protection"],
+      trending: true,
+      viewLink: "https://www.youtube.com/watch?v=NtDLPzsR-Gg",
+      downloadLink: "https://www.youtube.com/watch?v=NtDLPzsR-Gg"
+    },
+    {
+      id: 46,
+      title: "Family Therapy Exercises",
+      type: "article",
+      category: "relationships",
+      duration: "PDF",
+      rating: 4.4,
+      views: 1123,
+      description: "At-home exercises to improve family communication and bonding.",
+      tags: ["family therapy", "exercises", "communication"],
+      viewLink: "https://positivepsychology.com/family-therapy-techniques/",
+      downloadLink: "https://example.com/download/family-exercises.pdf"
+    },
+    {
+      id: 47,
+      title: "Long-Distance Relationship Survival",
+      type: "article",
+      category: "relationships",
+      duration: "10 min read",
+      rating: 4.6,
+      views: 1345,
+      description: "Maintain strong connections across the miles with practical advice.",
+      tags: ["long distance", "relationships", "connection"],
+      viewLink: "https://markmanson.net/long-distance-relationships",
+      downloadLink: null
+    },
+    {
+      id: 48,
+      title: "Dating After Divorce Guide",
+      type: "audio",
+      category: "relationships",
+      duration: "28 mins",
+      rating: 4.7,
+      views: 1789,
+      description: "Navigate the emotional journey of dating again after divorce.",
+      tags: ["dating", "divorce", "healing"],
+      new: true,
+      viewLink: "https://podcasts.apple.com/us/podcast/the-dating-after-divorce-survival-guide/id1486480336",
+      downloadLink: null
+    },
+    {
+      id: 49,
+      title: "Couple's Communication Workbook",
+      type: "download",
+      category: "relationships",
+      duration: "PDF",
+      rating: 4.8,
+      views: 1567,
+      description: "Strengthen your relationship with guided communication exercises.",
+      tags: ["couples", "communication", "workbook"],
+      viewLink: "https://example.com/couples-workbook",
+      downloadLink: "https://example.com/download/couples-workbook.pdf"
+    }
+  ];
+
 export const moods = [
   { label: '😄', value: 'happy', name: 'Happy', color: 'from-yellow-400 to-orange-500' },
   { label: '😢', value: 'sad', name: 'Sad', color: 'from-blue-300 to-blue-500' },
