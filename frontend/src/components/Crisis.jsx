@@ -132,7 +132,7 @@ const { token, backendUrl } = useContext(AppContext)
                     <div key={index} className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors">
                       <div className="flex justify-between items-center mb-2">
                         <h3 className="font-semibold text-gray-800 text-sm">{contact.name}</h3>
-                        <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
+                        <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
                           {contact.available}
                         </span>
                       </div>
@@ -177,9 +177,9 @@ const { token, backendUrl } = useContext(AppContext)
             {/* Additional Resources */}
             {helplines.length > 0 && (
               <div className="bg-white shadow-xl rounded-xl overflow-hidden">
-                <div className="bg-green-50 px-6 py-4 border-b border-green-100">
-                  <h2 className="text-lg font-bold text-green-800 flex items-center">
-                    <svg className="w-5 h-5 mr-2 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                <div className="bg-blue-50 px-6 py-4 border-b border-blue-100">
+                  <h2 className="text-lg font-bold text-blue-800 flex items-center">
+                    <svg className="w-5 h-5 mr-2 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
                     </svg>
                     Local Resources
@@ -195,7 +195,7 @@ const { token, backendUrl } = useContext(AppContext)
                         </div>
                         <button
                           onClick={() => handleCallNow(line.phone)}
-                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                         >
                           Call
                         </button>
@@ -229,7 +229,7 @@ const { token, backendUrl } = useContext(AppContext)
                     {[
                       { value: "high", label: "High - I need immediate help", color: "red", bgColor: "red-50", borderColor: "red-500" },
                       { value: "moderate", label: "Moderate - I need support soon", color: "yellow", bgColor: "yellow-50", borderColor: "yellow-500" },
-                      { value: "low", label: "Low - I need someone to talk to", color: "green", bgColor: "green-50", borderColor: "green-500" }
+                      { value: "low", label: "Low - I need someone to talk to", color: "green", bgColor: "blue-50", borderColor: "blue-500" }
                     ].map(({ value, label, color, bgColor, borderColor }) => (
                       <label key={value} className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
                         urgencyLevel === value 
@@ -305,9 +305,9 @@ const { token, backendUrl } = useContext(AppContext)
 
             {/* Crisis Videos Section */}
             <div className="bg-white shadow-xl rounded-xl overflow-hidden">
-              <div className="bg-gradient-to-r from-green-50 to-teal-50 px-6 py-4 border-b border-gray-100">
+              <div className="bg-gradient-to-r from-blue-50 to-blue-50 px-6 py-4 border-b border-gray-100">
                 <div className="flex justify-between items-center">
-                  <h2 className="text-xl font-bold text-teal-800 flex items-center">
+                  <h2 className="text-xl font-bold text-blue-800 flex items-center">
                     <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
                     </svg>
@@ -315,7 +315,7 @@ const { token, backendUrl } = useContext(AppContext)
                   </h2>
                   <button
                     onClick={() => setShowVideos(!showVideos)}
-                    className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
                   >
                     {showVideos ? "Hide Videos" : "Show Videos"}
                   </button>
@@ -359,7 +359,7 @@ const { token, backendUrl } = useContext(AppContext)
 
                   <div className="grid md:grid-cols-2 gap-4">
                     {crisisVideos.map((video, index) => (
-                      <div key={index} className="border-2 border-gray-200 rounded-lg p-4 hover:shadow-lg hover:border-teal-300 transition-all cursor-pointer">
+                      <div key={index} className="border-2 border-gray-200 rounded-lg p-4 hover:shadow-lg hover:border-blue-300 transition-all cursor-pointer">
                         <div className="flex items-start space-x-3">
                           <div className="text-3xl">{video.thumbnail}</div>
                           <div className="flex-1">
@@ -371,7 +371,7 @@ const { token, backendUrl } = useContext(AppContext)
                               </span>
                               <button
                                 onClick={() => setSelectedVideo(video)}
-                                className="bg-teal-600 hover:bg-teal-700 text-white px-3 py-1 rounded-lg text-sm font-medium transition-colors"
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-sm font-medium transition-colors"
                               >
                                 Watch Now
                               </button>
@@ -382,13 +382,13 @@ const { token, backendUrl } = useContext(AppContext)
                     ))}
                   </div>
 
-                  <div className="mt-6 p-4 bg-teal-50 rounded-lg border border-teal-200">
+                  <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
                     <div className="flex items-start space-x-2">
-                      <svg className="w-5 h-5 text-teal-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                       </svg>
                       <div>
-                        <p className="text-sm text-teal-800">
+                        <p className="text-sm text-blue-800">
                           <strong>Video Tips:</strong> Find a quiet space, use headphones if available, and follow along with the exercises. 
                           These videos are designed by mental health professionals to help in crisis moments.
                         </p>

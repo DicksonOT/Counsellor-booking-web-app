@@ -1796,7 +1796,7 @@ export const counsellors = [
         name: 'Dr. Thanawat Wongchai',
         image: coun20,
         specialty: 'Rehabilitation Counsellor',
-        degree: ' EdD in Counseling Psychology',
+        degree: 'EdD in Counseling Psychology',
         experience: '12 Years',
         about: 'Dr. Davis has a strong commitment to delivering comprehensive medical care, focusing on preventive medicine, early diagnosis, and effective treatment strategies. Dr. Davis has a strong commitment to delivering comprehensive medical care, focusing on preventive medicine, early diagnosis, and effective treatment strategies.',
         fees: 35,

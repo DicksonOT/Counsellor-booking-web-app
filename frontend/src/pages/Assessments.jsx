@@ -4,7 +4,7 @@ import MoodHistory from '../components/MoodHistory'
 
 const Assessments = () => {
   return (
-<main className='grid grid-cols-1 md:grid-cols-2 gap-6 p-6'>
+<main className='grid grid-cols-1 md:grid-cols-2 gap-6 p-6 mt-35'>
   <section aria-label="Assessment Progress">
     <UserAssessmentProgress />
   </section>

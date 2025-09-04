@@ -10,6 +10,7 @@ import programModel from '../models/programModel.js'
 import { Community } from '../models/communityModel.js';
 import UserProgress from '../models/userProgressModel.js'
 import donationModel from '../models/donationModel.js'
+import ChatRoom from '../models/chatModel.js'
 
 // Add formatPath here
 const formatPath = (filePath) => {
@@ -212,12 +213,32 @@ const adminDashboard = async (req, res) => {
         const counsellors = await counsellorModel.find({})
         const users = await userModel.find({})
         const appointments = await appointmentModel.find({})
+        const donations = await donationModel.find({})
+
+        // Calculate appointment revenue (only paid appointments)
+        const appointmentRevenue = appointments
+            .filter(appointment => appointment.payment === true)
+            .reduce((total, appointment) => total + appointment.amount, 0)
+
+        // Calculate donation revenue (only completed donations)
+        const donationRevenue = donations
+            .filter(donation => donation.status === 'completed')
+            .reduce((total, donation) => total + donation.amount, 0)
+
+        // Calculate total revenue
+        const totalRevenue = appointmentRevenue + donationRevenue
 
         const dashboardData = {
             counsellors: counsellors.length,
             appointments: appointments.length,
             users: users.length,
-            latestAppointments: appointments.reverse().slice(0, 5)
+            latestAppointments: appointments.reverse().slice(0, 5),
+            appointmentRevenue,
+            donationRevenue,
+            totalRevenue,
+            totalDonations: donations.length,
+            completedDonations: donations.filter(donation => donation.status === 'completed').length,
+            paidAppointments: appointments.filter(appointment => appointment.payment === true).length
         }
 
         res.json({ success: true, dashboardData })
@@ -261,28 +282,63 @@ const getPendingCounsellors = async (req, res) => {
 // API for adding programs
 const addProgram = async (req, res) => {
   try {
-    const { title, description, duration, difficulty, category, instructor, outcome, features, price, thumbnail } = req.body;
+    const { 
+      title, 
+      description, 
+      duration, 
+      difficulty, 
+      category, 
+      instructor, 
+      outcome, 
+      features, 
+      price, 
+      thumbnail 
+    } = req.body;
+
+    // Validate required fields
+    if (!title || !description || !category || !instructor || !outcome) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields"
+      });
+    }
+
+    // Format duration to match schema
+    const durationValue = parseInt(duration) || 0;
+    const durationUnit = duration.includes('week') ? 'weeks' : 
+                        duration.includes('month') ? 'months' : 'days';
 
     // Save program
     const newProgram = new programModel({
       title,
       description,
-      duration,
-      difficulty,
-      category,
-      instructor,
+      duration: {
+        value: durationValue,
+        unit: durationUnit
+      },
+      difficulty: difficulty || 'Beginner',
+      category: category || 'Personal Growth',
+      instructor: {
+        name: instructor,
+        title: "",
+        bio: "",
+        image: "",
+        credentials: []
+      },
       outcome,
-      features,
-      price,
-      thumbnail,
+      features: features || [],
+      price: price || 'Free',
+      thumbnail: thumbnail || "default-thumbnail.jpg",
       participants: 0,
-      rating: 0
+      rating: {
+        average: 0,
+        count: 0
+      }
     });
 
     await newProgram.save();
 
-    // Fetch all users
-    const users = await userModel.find({}, "email name");
+        const users = await userModel.find({}, "email name");
 
     if (users.length > 0) {
       const mailOptions = users.map(user => ({
@@ -309,9 +365,17 @@ const addProgram = async (req, res) => {
       await Promise.all(mailOptions.map(mail => transporter.sendMail(mail)));
     }
 
-    res.json({ success: true, message: "Program added & users notified", program: newProgram });
+    res.json({ 
+      success: true, 
+      message: "Program added successfully", 
+      program: newProgram 
+    });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error("Error adding program:", err);
+    res.status(500).json({ 
+      success: false, 
+      message: err.message 
+    });
   }
 };
 
@@ -329,139 +393,55 @@ const getAllPrograms = async (req, res) => {
 const updateProgram = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, duration, difficulty, category, instructor, outcome, features, price, thumbnail } = req.body;
+    const updateData = req.body;
 
-    // Find the existing program
-    const existingProgram = await programModel.findById(id);
-    if (!existingProgram) {
-      return res.status(404).json({ success: false, message: "Program not found" });
+    // Handle duration conversion if provided
+    if (updateData.duration) {
+      const durationValue = parseInt(updateData.duration) || 0;
+      const durationUnit = updateData.duration.includes('week') ? 'weeks' : 
+                          updateData.duration.includes('month') ? 'months' : 'days';
+      
+      updateData.duration = {
+        value: durationValue,
+        unit: durationUnit
+      };
     }
 
-    // Store old program data for comparison
-    const oldProgram = { ...existingProgram.toObject() };
+    // Handle instructor if it's just a string
+    if (updateData.instructor && typeof updateData.instructor === 'string') {
+      updateData.instructor = {
+        name: updateData.instructor,
+        title: "",
+        bio: "",
+        image: "",
+        credentials: []
+      };
+    }
 
-    // Update program
     const updatedProgram = await programModel.findByIdAndUpdate(
       id,
-      {
-        title,
-        description,
-        duration,
-        difficulty,
-        category,
-        instructor,
-        outcome,
-        features,
-        price,
-        thumbnail
-      },
+      updateData,
       { new: true, runValidators: true }
     );
 
-    // Check what fields were updated for email notification
-    const updatedFields = [];
-    if (oldProgram.title !== updatedProgram.title) updatedFields.push('title');
-    if (oldProgram.description !== updatedProgram.description) updatedFields.push('description');
-    if (oldProgram.duration !== updatedProgram.duration) updatedFields.push('duration');
-    if (oldProgram.difficulty !== updatedProgram.difficulty) updatedFields.push('difficulty');
-    if (oldProgram.instructor !== updatedProgram.instructor) updatedFields.push('instructor');
-    if (oldProgram.outcome !== updatedProgram.outcome) updatedFields.push('outcome');
-    if (JSON.stringify(oldProgram.features) !== JSON.stringify(updatedProgram.features)) updatedFields.push('features');
-    if (oldProgram.price !== updatedProgram.price) updatedFields.push('pricing');
-
-    // Send email notifications if there are significant updates
-    if (updatedFields.length > 0) {
-      // Fetch all users
-      const users = await userModel.find({}, "email name");
-
-      if (users.length > 0) {
-        const getUpdateMessage = () => {
-          if (updatedFields.includes('title')) {
-            return `The program "${oldProgram.title}" has been updated to "${updatedProgram.title}"`;
-          }
-          return `The program "${updatedProgram.title}" has been updated with new improvements`;
-        };
-
-        const getUpdatedFieldsList = () => {
-          const fieldNames = {
-            title: 'Program Title',
-            description: 'Description',
-            duration: 'Duration',
-            difficulty: 'Difficulty Level',
-            instructor: 'Instructor',
-            outcome: 'Expected Outcomes',
-            features: 'Program Features',
-            pricing: 'Pricing'
-          };
-          
-          return updatedFields.map(field => fieldNames[field] || field).join(', ');
-        };
-
-        const mailOptions = users.map(user => ({
-          from: process.env.MAIL_USER,
-          to: user.email,
-          subject: `Program Update: ${updatedProgram.title}`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; color: white;">
-                <h1 style="margin: 0; font-size: 24px;">Program Updated!</h1>
-              </div>
-              
-              <div style="padding: 30px; background-color: #f8f9fa;">
-                <p style="font-size: 16px; color: #333;">Hi ${user.name || "there"},</p>
-                
-                <p style="font-size: 16px; color: #333; line-height: 1.6;">
-                  ${getUpdateMessage()}. Here's what's new:
-                </p>
-                
-                <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea;">
-                  <h2 style="color: #333; margin-top: 0;">${updatedProgram.title}</h2>
-                  <p style="color: #666; margin: 5px 0;"><strong>Instructor:</strong> ${updatedProgram.instructor}</p>
-                  <p style="color: #666; margin: 5px 0;"><strong>Duration:</strong> ${updatedProgram.duration}</p>
-                  <p style="color: #666; margin: 5px 0;"><strong>Difficulty:</strong> ${updatedProgram.difficulty}</p>
-                  <p style="color: #666; margin: 15px 0 5px 0;"><strong>What You'll Achieve:</strong></p>
-                  <p style="color: #555; line-height: 1.5;">${updatedProgram.outcome}</p>
-                </div>
-                
-                <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                  <p style="margin: 0; color: #1976d2; font-size: 14px;">
-                    <strong>Updated Areas:</strong> ${getUpdatedFieldsList()}
-                  </p>
-                </div>
-                
-                <div style="text-align: center; margin: 30px 0;">
-                  <a href="${process.env.CLIENT_URL}/programs/${updatedProgram._id}" 
-                     style="display: inline-block; padding: 15px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 25px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">
-                     View Updated Program
-                  </a>
-                </div>
-                
-                <div style="border-top: 1px solid #ddd; padding-top: 20px; margin-top: 30px; text-align: center; color: #666;">
-                  <p style="margin: 0;">Keep growing with The Quiet Place</p>
-                  <p style="margin: 5px 0 0 0; font-size: 14px;">- The Quiet Place Team</p>
-                </div>
-              </div>
-            </div>
-          `
-        }));
-
-        // Send emails in bulk
-        try {
-          await Promise.all(mailOptions.map(mail => transporter.sendMail(mail)));
-        } catch (emailError) {
-          console.log('Email notification error:', emailError);
-          // Don't fail the update if email fails
-        }
-      }
+    if (!updatedProgram) {
+      return res.status(404).json({
+        success: false,
+        message: "Program not found"
+      });
     }
 
-    res.json({ 
-      success: true, 
-      message: "Program updated successfully" + (updatedFields.length > 0 ? " & users notified" : ""), 
-      program: updatedProgram 
+    res.json({
+      success: true,
+      message: "Program updated successfully",
+      program: updatedProgram
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error("Error updating program:", err);
+    res.status(500).json({
+      success: false,
+      message: err.message
+    });
   }
 };
 
@@ -511,7 +491,7 @@ const createCommunity = async (req, res) => {
 
     // Get all approved counsellors (they act as moderators)
     const counsellors = await counsellorModel.find({ status: 'approved' }, '_id');
-    const counsellorIds = counsellors.map(c => c._id);
+    const counIds = counsellors.map(c => c._id);
 
     const communityData = {
       name,
@@ -521,7 +501,7 @@ const createCommunity = async (req, res) => {
       rules: parsedRules,
       tags: parsedTags,
       isPrivate: isPrivate === 'true', // Convert string to boolean
-      moderators: counsellorIds,
+      moderators: counIds,
       members: [userId],         
       memberCount: 1
     };
@@ -688,6 +668,392 @@ const exportDonations = async (req, res) => {
   }
 };
 
+// API to get all counsellors with their current month revenue
+const getCounsellorsWithRevenue = async (req, res) => {
+    try {
+        // Get current month start and end dates
+        const now = new Date()
+        const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+        const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
+
+        // Get all approved counsellors
+        const counsellors = await counsellorModel.find({ status: 'approved' })
+
+        // Calculate revenue for each counsellor
+        const counsellorsWithRevenue = await Promise.all(
+            counsellors.map(async (counsellor) => {
+                // Get appointments for this counsellor in current month (only paid ones)
+                const appointments = await appointmentModel.find({
+                    counId: counsellor._id.toString(),
+                    payment: true, // Only paid appointments
+                    date: {
+                        $gte: currentMonthStart.getTime(),
+                        $lte: currentMonthEnd.getTime()
+                    }
+                })
+
+                // Calculate total revenue and appointment count
+                const currentMonthRevenue = appointments.reduce((total, appointment) => {
+                    return total + (appointment.amount || 0)
+                }, 0)
+
+                const currentMonthAppointments = appointments.length
+
+                // Get total completed appointments for this counsellor
+                const totalAppointments = await appointmentModel.countDocuments({
+                    counId: counsellor._id.toString(),
+                    payment: true
+                })
+
+                // Calculate total lifetime revenue
+                const allPaidAppointments = await appointmentModel.find({
+                    counId: counsellor._id.toString(),
+                    payment: true
+                })
+
+                const totalRevenue = allPaidAppointments.reduce((total, appointment) => {
+                    return total + (appointment.amount || 0)
+                }, 0)
+
+                // Calculate payable amounts (90% after 10% platform fee)
+                const currentMonthPayable = currentMonthRevenue * 0.9
+                const totalPayable = totalRevenue * 0.9
+                const platformFeeCurrentMonth = currentMonthRevenue * 0.1
+                const platformFeeTotal = totalRevenue * 0.1
+
+                return {
+                    _id: counsellor._id,
+                    name: counsellor.name,
+                    email: counsellor.email,
+                    specialty: counsellor.specialty,
+                    fees: counsellor.fees,
+                    location: counsellor.location,
+                    image: counsellor.image,
+                    available: counsellor.available,
+                    sessionType: counsellor.sessionType,
+                    experienceYears: counsellor.experienceYears,
+                    currentMonthRevenue,
+                    currentMonthPayable,
+                    currentMonthAppointments,
+                    totalRevenue,
+                    totalPayable,
+                    totalAppointments,
+                    platformFeeCurrentMonth,
+                    platformFeeTotal
+                }
+            })
+        )
+
+        // Sort by current month revenue (highest first)
+        counsellorsWithRevenue.sort((a, b) => b.currentMonthRevenue - a.currentMonthRevenue)
+
+        res.json({
+            success: true,
+            counsellors: counsellorsWithRevenue,
+            month: now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+        })
+
+    } catch (error) {
+        console.log(error)
+        res.json({ success: false, message: error.message })
+    }
+}
+
+// API to get individual counsellor details with revenue breakdown
+const getCounsellorRevenue = async (req, res) => {
+    try {
+        const { counId } = req.params
+
+        // Get counsellor details
+        const counsellor = await counsellorModel.findById(counId)
+        if (!counsellor) {
+            return res.json({ success: false, message: "Counsellor not found" })
+        }
+
+        // Get current month start and end dates
+        const now = new Date()
+        const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+        const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
+
+        // Get last month dates
+        const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+        const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999)
+
+        // Get current month appointments (paid only)
+        const currentMonthAppointments = await appointmentModel.find({
+            counId: counId,
+            payment: true,
+            date: {
+                $gte: currentMonthStart.getTime(),
+                $lte: currentMonthEnd.getTime()
+            }
+        })
+
+        // Get last month appointments (paid only)
+        const lastMonthAppointments = await appointmentModel.find({
+            counId: counId,
+            payment: true,
+            date: {
+                $gte: lastMonthStart.getTime(),
+                $lte: lastMonthEnd.getTime()
+            }
+        })
+
+        // Get all time appointments (paid only)
+        const allTimeAppointments = await appointmentModel.find({
+            counId: counId,
+            payment: true
+        })
+
+        // Calculate revenues and payable amounts (90% after 10% platform fee)
+        const currentMonthRevenue = currentMonthAppointments.reduce((total, app) => total + (app.amount || 0), 0)
+        const lastMonthRevenue = lastMonthAppointments.reduce((total, app) => total + (app.amount || 0), 0)
+        const totalRevenue = allTimeAppointments.reduce((total, app) => total + (app.amount || 0), 0)
+
+        // Calculate payable amounts (after 10% platform fee deduction)
+        const currentMonthPayable = currentMonthRevenue * 0.9
+        const lastMonthPayable = lastMonthRevenue * 0.9
+        const totalPayable = totalRevenue * 0.9
+
+        // Calculate platform fees
+        const platformFeeCurrentMonth = currentMonthRevenue * 0.1
+        const platformFeeLastMonth = lastMonthRevenue * 0.1
+        const platformFeeTotal = totalRevenue * 0.1
+
+        // Calculate growth percentage (based on gross revenue)
+        const growthPercentage = lastMonthRevenue > 0 
+            ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue * 100).toFixed(1)
+            : currentMonthRevenue > 0 ? 100 : 0
+
+        // Calculate payable growth percentage
+        const payableGrowthPercentage = lastMonthPayable > 0 
+            ? ((currentMonthPayable - lastMonthPayable) / lastMonthPayable * 100).toFixed(1)
+            : currentMonthPayable > 0 ? 100 : 0
+
+        // Get recent appointments for details
+        const recentAppointments = await appointmentModel.find({
+            counId: counId,
+            payment: true
+        }).sort({ date: -1 }).limit(10)
+
+        const revenueData = {
+            counsellor: {
+                _id: counsellor._id,
+                name: counsellor.name,
+                email: counsellor.email,
+                specialty: counsellor.specialty,
+                fees: counsellor.fees,
+                location: counsellor.location,
+                image: counsellor.image,
+                available: counsellor.available,
+                sessionType: counsellor.sessionType,
+                experienceYears: counsellor.experienceYears,
+                about: counsellor.about
+            },
+            revenue: {
+                currentMonth: currentMonthRevenue,
+                currentMonthPayable: currentMonthPayable,
+                lastMonth: lastMonthRevenue,
+                lastMonthPayable: lastMonthPayable,
+                total: totalRevenue,
+                totalPayable: totalPayable,
+                growthPercentage: parseFloat(growthPercentage),
+                payableGrowthPercentage: parseFloat(payableGrowthPercentage)
+            },
+            platformFees: {
+                currentMonth: platformFeeCurrentMonth,
+                lastMonth: platformFeeLastMonth,
+                total: platformFeeTotal
+            },
+            appointments: {
+                currentMonth: currentMonthAppointments.length,
+                lastMonth: lastMonthAppointments.length,
+                total: allTimeAppointments.length
+            },
+            recentAppointments: recentAppointments.map(app => ({
+                _id: app._id,
+                slotDate: app.slotDate,
+                slotTime: app.slotTime,
+                amount: app.amount,
+                date: app.date,
+                cancelled: app.cancelled,
+                isCompleted: app.isCompleted,
+                userData: app.userData
+            }))
+        }
+
+        res.json({
+            success: true,
+            data: revenueData,
+            month: now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+        })
+
+    } catch (error) {
+        console.log(error)
+        res.json({ success: false, message: error.message })
+    }
+}
+
+// Get all chat rooms
+const getAllChatRooms = async (req, res) => {
+  try {
+    const chatRooms = await ChatRoom
+      .find()
+      .populate({
+        path: "program",
+        populate: [
+          { path: "assignedCounselor", select: "name email gpcNumber specialty", model: "Counsellor" },
+          { path: "counselors", select: "name email gpcNumber specialty status", model: "Counsellor" }, 
+          { path: "moderators", select: "name email role avatar", model: "User" }
+        ]
+      })
+      .lean();
+
+    res.json({ success: true, chatRooms });
+  } catch (error) {
+    console.error("Get all chat rooms error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// Assign counselors to a program
+const assignCounsellor = async (req, res) => {
+  try {
+    const { programId } = req.params;
+    const { counsellorId } = req.body;
+
+    if (!counsellorId) {
+      return res.status(400).json({ success: false, message: "Counsellor ID is required" });
+    }
+
+    // Find program and fix rating structure if needed
+    let program = await programModel.findById(programId);
+    if (!program) {
+      return res.status(404).json({ success: false, message: "Program not found" });
+    }
+
+    // Fix rating structure if it's a number instead of object
+    if (typeof program.rating === 'number' || !program.rating || program.rating === null) {
+      await programModel.updateOne(
+        { _id: programId },
+        { 
+          $set: { 
+            rating: {
+              average: typeof program.rating === 'number' ? program.rating : 0,
+              count: program.reviews?.length || 0
+            }
+          } 
+        }
+      );
+      // Refresh the program document
+      program = await programModel.findById(programId);
+    }
+
+    // Find counsellor in Counsellor model
+    const counsellor = await counsellorModel.findById(counsellorId);
+    if (!counsellor) {
+      return res.status(404).json({ success: false, message: "Counsellor not found" });
+    }
+
+    // Check if counsellor is approved
+    if (counsellor.status !== 'approved') {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Counsellor must be approved before assignment" 
+      });
+    }
+
+    // Initialize counselors array if it doesn't exist
+    if (!program.counselors) {
+      program.counselors = [];
+    }
+
+    // Prevent duplicates
+    if (program.counselors.includes(counsellorId)) {
+      return res.status(400).json({ success: false, message: "Counsellor already assigned" });
+    }
+
+    // Use findByIdAndUpdate instead of save to avoid validation issues
+    const updatedProgram = await programModel.findByIdAndUpdate(
+      programId,
+      { 
+        $addToSet: { counselors: counsellorId },
+        $set: { assignedCounselor: counsellorId }
+      },
+      { 
+        new: true, 
+        runValidators: true,
+        populate: {
+          path: "counselors",
+          select: "name email gpcNumber specialty status"
+        }
+      }
+    );
+
+    res.status(200).json({ 
+      success: true, 
+      message: "Counsellor assigned successfully", 
+      program: updatedProgram 
+    });
+  } catch (error) {
+    console.error("Assign counsellor error:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Internal server error", 
+      error: error.message 
+    });
+  }
+};
+
+// Unassign a counsellor from a program
+const unassignCounsellor = async (req, res) => {
+  try {
+    const { programId, counsellorId } = req.params;
+
+    const program = await programModel.findById(programId);
+    if (!program) {
+      return res.status(404).json({ success: false, message: "Program not found" });
+    }
+
+    // Initialize arrays if they don't exist
+    if (!program.counsellors) program.counsellors = [];
+    if (!program.moderators) program.moderators = [];
+
+    // Remove counsellor (use counsellors not counselors)
+    program.counsellors = program.counsellors.filter(
+      id => id.toString() !== counsellorId
+    );
+    program.moderators = program.moderators.filter(
+      id => id.toString() !== counsellorId
+    );
+    
+    // Also remove from assignedCounselor if it matches
+    if (
+      program.assignedCounselor &&
+      program.assignedCounselor.toString() === counsellorId
+    ) {
+      program.assignedCounselor = null;
+    }
+
+    await program.save();
+
+    // Populate the updated program before sending response
+    const updatedProgram = await programModel.findById(programId)
+      .populate("counsellors", "name email role avatar");
+
+    res.json({
+      success: true,
+      message: "Counsellor unassigned successfully",
+      program: updatedProgram
+    });
+  } catch (error) {
+    console.error("Unassign counsellor error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// Don't forget to add this route to your admin router:
+// adminRouter.delete('/chat/:roomId/unassign-counsellor/:counId', authAdmin, unassignCounsellor);
 // Reset user progress (admin function)
 // const resetUserProgress = async (req, res) => {
 //   const { userId } = req.params;
@@ -733,6 +1099,11 @@ const exportDonations = async (req, res) => {
 // };
 
 
-export { addCounsellor, loginAdmin, allCounsellors, getAllAppointments, adminDashboard, changeAvailability, updateCounsellorStatus, getPendingCounsellors, addProgram, getAllPrograms, updateProgram, deleteProgram, createCommunity, getDonationAnalytics, getDonations, exportDonations }
-
-
+export { addCounsellor, loginAdmin, 
+          allCounsellors, getAllAppointments, 
+          adminDashboard, changeAvailability, updateCounsellorStatus,
+          getPendingCounsellors, addProgram, getAllPrograms, updateProgram, deleteProgram, 
+          createCommunity, 
+          getDonationAnalytics, getDonations, exportDonations, 
+          getCounsellorsWithRevenue, getCounsellorRevenue,
+          getAllChatRooms, assignCounsellor, unassignCounsellor }

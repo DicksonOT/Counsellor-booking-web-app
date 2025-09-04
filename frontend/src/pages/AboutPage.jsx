@@ -7,7 +7,7 @@ import ContactUs from "../components/ContactUs";
 
 const About = () => {
   return (
-    <div>
+    <div className="mt-30">
       <Info />
       <Reviews />
       <OurTeam />

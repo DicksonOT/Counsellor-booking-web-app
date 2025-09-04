@@ -12,7 +12,7 @@ const WellnessActivities = () => {
     const [filters, setFilters] = useState({
         activityType: '',
         difficulty: '',
-        status: 'all' // all, available, joined, completed
+        status: 'all' 
     });
     const [selectedActivity, setSelectedActivity] = useState(null);
     const [completionData, setCompletionData] = useState({
@@ -155,9 +155,9 @@ const WellnessActivities = () => {
     }
 
     return (
-        <div className="p-6 bg-white rounded-lg shadow-lg">
+        <div className="p-6 bg-white rounded-lg shadow-lg mt-35">
             <div className="mb-6">
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">Wellness Activities</h2>
+                <h2 className="text-2xl font-bold text-blue-600 mb-2">Wellness Activities</h2>
                 <p className="text-gray-600">Discover activities to enhance your mental well-being</p>
             </div>
 

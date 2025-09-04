@@ -19,6 +19,7 @@ import { Community, Post, Comment } from '../models/communityModel.js';
 import UserProgress from '../models/userProgressModel.js'
 import mongoose from 'mongoose';
 import donationModel from '../models/donationModel.js'
+import ChatRoom from '../models/chatModel.js'
 
 // API to register user
 const registerUser = async (req, res) => {
@@ -699,6 +700,91 @@ const getBadgeInfo = (points) => {
   return badges[points] || { icon: "🏅", description: `Incredible ${points} points milestone reached!` };
 };
 
+// API to get user badges
+const getUserBadges = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const progress = await UserProgress.findOne({ user: userId }).select('badges totalScore');
+    
+    if (!progress) {
+      return res.json({ 
+        success: true, 
+        badges: [], 
+        totalScore: 0,
+        nextBadgeAt: 50
+      });
+    }
+    
+    const nextMilestone = Math.ceil(progress.totalScore / 50) * 50;
+    const nextBadgeAt = nextMilestone === progress.totalScore ? progress.totalScore + 50 : nextMilestone;
+    
+    res.json({ 
+      success: true, 
+      badges: progress.badges || [], 
+      totalScore: progress.totalScore || 0,
+      nextBadgeAt: nextBadgeAt
+    });
+  } catch (error) {
+    console.error('Error fetching badges:', error);
+    res.json({ success: false, message: 'Error fetching badges' });
+  }
+}
+
+// API for bulk analytics
+const bulkAnalytics = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const progress = await UserProgress.findOne({ user: userId });
+    
+    if (!progress) {
+      return res.json({ success: false, message: 'No data found' });
+    }
+
+    // Prepare analytics data
+    const last30Days = new Date();
+    last30Days.setDate(last30Days.getDate() - 30);
+
+    const recentActivities = progress.scoreHistory.filter(entry => 
+      new Date(entry.date) >= last30Days
+    );
+
+    // Daily breakdown
+    const dailyData = {};
+    recentActivities.forEach(entry => {
+      const dateKey = new Date(entry.date).toDateString();
+      if (!dailyData[dateKey]) {
+        dailyData[dateKey] = { points: 0, activities: 0, sources: new Set() };
+      }
+      dailyData[dateKey].points += entry.score;
+      dailyData[dateKey].activities += 1;
+      dailyData[dateKey].sources.add(entry.source);
+    });
+
+    // Convert Set to Array for JSON serialization
+    Object.keys(dailyData).forEach(date => {
+      dailyData[date].sources = Array.from(dailyData[date].sources);
+    });
+
+    const analytics = {
+      totalPoints: progress.totalScore,
+      wellnessPoints: progress.wellnessPoints,
+      last30Days: Object.entries(dailyData).map(([date, data]) => ({
+        date,
+        ...data
+      })).sort((a, b) => new Date(a.date) - new Date(b.date)),
+      streaks: progress.streaks,
+      monthlyStats: progress.monthlyStats,
+      weeklyStats: progress.weeklyStats,
+      badges: progress.badges || []
+    };
+
+    res.json({ success: true, analytics });
+  } catch (error) {
+    console.error(error);
+    res.json({ success: false, message: 'Error generating analytics' });
+  }
+}
+
 // API for chatbot visits
 const chatbotVisit = async (req, res) => {
   const userId = req.userId;
@@ -1352,57 +1438,6 @@ const getPrograms = async (req, res) => {
   try {
     const programs = await programModel.find();
     res.json({ success: true, programs });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-};
-
-//API to enroll user into a program
-const enrollProgram = async (req, res) => {
-  try {
-    const { programId } = req.body;
-    const userId = req.userId
-
-    const program = await programModel.findById(programId);
-    if (!program) return res.json({ success: false, message: "Program not found" });
-
-    // Check if already enrolled
-    const alreadyEnrolled = await enrollmentModel.findOne({ user: userId, program: programId });
-    if (alreadyEnrolled) return res.json({ success: true, message: "Already enrolled", enrollment: alreadyEnrolled });
-
-    // Create enrollment
-    const enrollment = new enrollmentModel({ user: userId, program: programId });
-    await enrollment.save();
-
-    // Increase participant count
-    program.participants += 1;
-    await program.save();
-
-    // Fetch user + counsellors + admin email
-    const user = await userModel.findById(userId);
-    const counsellors = await counsellorModel.find(); 
-    const adminEmail = process.env.MAIL_USER;
-
-    // Email content
-    const mailOptions = [
-      {
-        from: process.env.MAIL_USER,
-        to: user.email,
-        subject: `Enrolled in ${program.title}`,
-        html: `<p>Hi ${user.name},</p><p>You have successfully enrolled in <b>${program.title}</b>.</p>`
-      },
-      {
-        from: process.env.MAIL_USER,
-        to: adminEmail,
-        subject: `New Enrollment Logged`,
-        html: `<p>User <b>${user.name}</b> has enrolled in <b>${program.title}</b>.</p>`
-      }
-    ];
-
-    // Send all mails
-    await Promise.all(mailOptions.map(mail => transporter.sendMail(mail)));
-
-    res.json({ success: true, message: "Enrollment successful, notifications sent" });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -3140,6 +3175,661 @@ const getUserDonationHistory = async (req, res) => {
   }
 };
 
+//API to enroll user into a program
+const enrollProgram = async (req, res) => {
+  try {
+    const { programId } = req.body;
+    const userId = req.userId;
+
+    const program = await programModel.findById(programId);
+    if (!program) return res.json({ success: false, message: "Program not found" });
+
+    // Check if already enrolled
+    const alreadyEnrolled = await enrollmentModel.findOne({ user: userId, program: programId });
+    if (alreadyEnrolled) {
+      return res.json({ success: true, message: "Already enrolled", enrollment: alreadyEnrolled });
+    }
+
+    // Create enrollment
+    const enrollment = new enrollmentModel({ user: userId, program: programId });
+    await enrollment.save(); 
+
+    // Increase participant count
+    program.participants += 1;
+    await program.save();
+
+    // Create or update chat room
+    let chatRoom = await ChatRoom.findOne({ program: programId });
+    if (!chatRoom) {
+      chatRoom = await createChatRoom(programId, program.title);
+    }
+    
+    // Add user to chat room members if not already added
+    const isMember = chatRoom.members.some(member => member.user.toString() === userId);
+    if (!isMember) {
+      chatRoom.members.push({ user: userId });
+      await chatRoom.save();
+    }
+
+    // Fetch user + counsellors + admin email
+    const user = await userModel.findById(userId);
+    const counsellors = await counsellorModel.find();
+
+    const adminEmail = process.env.MAIL_USER;
+
+    // Email content
+    const mailOptions = [
+      {
+        from: process.env.MAIL_USER,
+        to: user.email,
+        subject: `Enrolled in ${program.title}`,
+        html: `<p>Hi ${user.name},</p><p>You have successfully enrolled in <b>${program.title}</b>.</p><p>You can now access the support group chat to connect with other participants and counselors.</p>`
+      },
+      {
+        from: process.env.MAIL_USER,
+        to: adminEmail,
+        subject: `New Enrollment Logged`,
+        html: `<p>User <b>${user.name}</b> has enrolled in <b>${program.title}</b>.</p>`
+      }
+    ];
+
+    // Send all mails
+    await Promise.all(mailOptions.map(mail => transporter.sendMail(mail)));
+
+    res.json({ success: true, message: "Enrollment successful, notifications sent" });
+  } catch (err) {
+    console.error('Enrollment error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// API to get enrolled programs
+const getEnrolledPrograms = async (req, res) => {
+  try {
+    const userId = req.userId; 
+    
+    const enrollments = await enrollmentModel
+      .find({ user: userId })
+      .populate('program')
+      .populate('user');
+        
+    res.json({ 
+      success: true, 
+      enrollments 
+    });
+  } catch (error) {
+    console.error('Error fetching enrollments:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to fetch enrollments" 
+    });
+  }
+};
+
+// Improved getChatParticipants function with consistent data structure
+// Add this endpoint to fetch chat history with pagination
+const getChatHistory = async (req, res) => {
+  try {
+    const { programId } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const userId = req.userId;
+
+    console.log('Getting chat history for program:', programId, 'page:', page);
+
+    // Check enrollment
+    const enrollment = await enrollmentModel.findOne({ 
+      user: userId, 
+      program: programId 
+    });
+
+    if (!enrollment) {
+      return res.status(403).json({ 
+        success: false, 
+        message: "Access denied - you must be enrolled in this program" 
+      });
+    }
+
+    // Find chat room
+    const chatRoom = await ChatRoom.findOne({ program: programId })
+      .populate('messages.sender', 'name role avatar');
+
+    if (!chatRoom) {
+      return res.status(404).json({
+        success: false,
+        message: "Chat room not found"
+      });
+    }
+
+    // Calculate pagination
+    const totalMessages = chatRoom.messages.length;
+    const totalPages = Math.ceil(totalMessages / limit);
+    const skip = (page - 1) * limit;
+    
+    // Get messages with pagination (most recent first)
+    const messages = chatRoom.messages
+      .slice(-skip - limit, totalMessages - skip) // Get the slice we need
+      .reverse() // Reverse to get chronological order
+      .map(message => ({
+        _id: message._id,
+        user: message.sender ? {
+          _id: message.sender._id,
+          name: message.sender.name,
+          role: message.senderRole,
+          avatar: message.sender.avatar
+        } : null,
+        content: message.content,
+        timestamp: message.createdAt,
+        type: message.messageType,
+        isEdited: message.isEdited || false,
+        reactions: message.reactions || [],
+        senderRole: message.senderRole
+      }));
+
+    res.json({
+      success: true,
+      messages: messages,
+      pagination: {
+        currentPage: page,
+        totalPages: totalPages,
+        totalMessages: totalMessages,
+        hasMore: page < totalPages,
+        messagesPerPage: limit
+      },
+      hasMore: page < totalPages
+    });
+
+  } catch (error) {
+    console.error('Error fetching chat history:', error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch chat history",
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
+  }
+};
+
+// Get program participants for the sidebar
+const getChatParticipants = async (req, res) => {
+  try {
+    const { programId } = req.params;
+    const userId = req.userId;
+
+    // Check enrollment
+    const enrollment = await enrollmentModel.findOne({ 
+      user: userId, 
+      program: programId 
+    });
+
+    if (!enrollment) {
+      return res.status(403).json({ 
+        success: false, 
+        message: "Access denied - you must be enrolled in this program" 
+      });
+    }
+
+    // Get program with populated fields
+    const program = await programModel.findById(programId)
+      .populate('assignedCounselor', 'name role avatar')
+      .populate('assignedModerator', 'name role avatar')
+      .populate('counselors', 'name role avatar')
+      .populate('moderators', 'name role avatar');
+
+    if (!program) {
+      return res.status(404).json({
+        success: false,
+        message: "Program not found"
+      });
+    }
+
+    // Get all enrollments for this program
+    const enrollments = await enrollmentModel.find({ program: programId })
+      .populate('user', 'name role avatar')
+      .select('user');
+
+    // Find chat room to get online status
+    const chatRoom = await ChatRoom.findOne({ program: programId });
+    const onlineUsers = chatRoom ? 
+      chatRoom.members.filter(m => m.isOnline).map(m => m.user.toString()) : 
+      [];
+
+    // Separate participants and counselors
+    const participants = [];
+    const counselors = [];
+
+    // Add assigned counselor
+    if (program.assignedCounselor) {
+      counselors.push({
+        _id: program.assignedCounselor._id,
+        name: program.assignedCounselor.name,
+        role: 'counselor',
+        avatar: program.assignedCounselor.avatar,
+        online: onlineUsers.includes(program.assignedCounselor._id.toString()),
+        source: 'assigned_counselor'
+      });
+    }
+
+    // Add assigned moderator
+    if (program.assignedModerator) {
+      counselors.push({
+        _id: program.assignedModerator._id,
+        name: program.assignedModerator.name,
+        role: 'moderator',
+        avatar: program.assignedModerator.avatar,
+        online: onlineUsers.includes(program.assignedModerator._id.toString()),
+        source: 'assigned_moderator'
+      });
+    }
+
+    // Add other counselors and moderators
+    [...(program.counselors || []), ...(program.moderators || [])].forEach(person => {
+      // Avoid duplicates
+      if (!counselors.find(c => c._id.toString() === person._id.toString())) {
+        counselors.push({
+          _id: person._id,
+          name: person.name,
+          role: person.role,
+          avatar: person.avatar,
+          online: onlineUsers.includes(person._id.toString()),
+          source: 'program_staff'
+        });
+      }
+    });
+
+    // Add enrolled participants
+    enrollments.forEach(enrollment => {
+      if (enrollment.user) {
+        const user = enrollment.user;
+        // Only add if not already in counselors list
+        if (!counselors.find(c => c._id.toString() === user._id.toString())) {
+          participants.push({
+            _id: user._id,
+            name: user.name,
+            role: 'participant',
+            avatar: user.avatar,
+            online: onlineUsers.includes(user._id.toString())
+          });
+        }
+      }
+    });
+
+    res.json({
+      success: true,
+      participants: participants,
+      counselors: counselors,
+      stats: {
+        totalParticipants: participants.length,
+        totalCounselors: counselors.length,
+        onlineUsers: onlineUsers.length,
+        totalMembers: participants.length + counselors.length
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching program participants:', error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch participants",
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
+  }
+};
+
+// sed Message function
+const sendMessage = async (req, res) => {
+  try {
+    const { programId } = req.params;
+    const { content, messageType = 'text' } = req.body;
+    const userId = req.userId;
+
+    // Validate input
+    if (!content || typeof content !== 'string' || !content.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Message content is required"
+      });
+    }
+
+    if (content.length > 1000) {
+      return res.status(400).json({
+        success: false,
+        message: "Message too long (max 1000 characters)"
+      });
+    }
+
+    // Check enrollment
+    const enrollment = await enrollmentModel.findOne({ 
+      user: userId, 
+      program: programId 
+    });
+
+    if (!enrollment) {
+      return res.status(403).json({ 
+        success: false, 
+        message: "Access denied - you must be enrolled in this program" 
+      });
+    }
+
+    // Get user info
+    const user = await userModel.findById(userId).select('name email role avatar');
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    // Find or create chat room
+    let chatRoom = await ChatRoom.findOne({ program: programId });
+    if (!chatRoom) {
+      const program = await programModel.findById(programId).select('title');
+      if (!program) {
+        return res.status(404).json({
+          success: false,
+          message: "Program not found"
+        });
+      }
+      
+      chatRoom = await createChatRoom(programId, program.title);
+    }
+
+    // Determine sender role
+    let senderRole = 'participant';
+    if (['admin', 'counselor', 'moderator'].includes(user.role)) {
+      senderRole = user.role;
+    }
+
+    // Use the improved sendMessage method from the schema
+    const message = await chatRoom.sendMessage(userId, content.trim(), messageType, senderRole);
+
+    // Format response - FIXED: Now correctly references the schema fields
+    const formattedMessage = {
+      _id: message._id,
+      user: {
+        _id: user._id,
+        name: user.name,
+        role: senderRole,
+        avatar: user.avatar
+      },
+      content: message.content,
+      timestamp: message.createdAt,
+      type: message.messageType,
+      isEdited: message.isEdited || false,
+      reactions: message.reactions || []
+    };
+
+    res.json({
+      success: true,
+      message: formattedMessage
+    });
+  } catch (error) {
+    console.error('Send message error:', error);
+    
+    // Handle specific errors
+    if (error.message === 'User is muted') {
+      return res.status(403).json({
+        success: false,
+        message: "You are currently muted and cannot send messages"
+      });
+    }
+    
+    if (error.message.includes('Slow mode active')) {
+      return res.status(429).json({
+        success: false,
+        message: error.message
+      });
+    }
+    
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to send message",
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
+  }
+};
+
+// Fixed joinChatRoom function
+const joinChatRoom = async (req, res) => {
+  try {
+    const { programId } = req.params;
+    const userId = req.userId;
+
+    // Check enrollment
+    const enrollment = await enrollmentModel.findOne({ 
+      user: userId, 
+      program: programId 
+    });
+
+    if (!enrollment) {
+      return res.status(403).json({ 
+        success: false, 
+        message: "You must be enrolled in this program to join the chat" 
+      });
+    }
+
+    // Get user info
+    const user = await userModel.findById(userId).select('name role');
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    // Find or create chat room
+    let chatRoom = await ChatRoom.findOne({ program: programId });
+    if (!chatRoom) {
+      const program = await programModel.findById(programId).select('title');
+      chatRoom = await createChatRoom(programId, program.title);
+    }
+
+    // Determine member role
+    let memberRole = 'participant';
+    if (['admin', 'counselor', 'moderator'].includes(user.role)) {
+      memberRole = user.role;
+    }
+
+    // Check if user is already a member
+    const existingMember = chatRoom.members.find(m => 
+      m.user.toString() === userId.toString()
+    );
+
+    if (!existingMember) {
+      chatRoom.members.push({
+        user: userId,
+        role: memberRole,
+        joinedAt: new Date(),
+        lastSeen: new Date(),
+        isOnline: true
+      });
+      
+      await chatRoom.save();
+    } else {
+      // Update existing member status
+      existingMember.isOnline = true;
+      existingMember.lastSeen = new Date();
+      await chatRoom.save();
+    }
+
+    res.json({
+      success: true,
+      message: "Successfully joined chat room",
+      chatRoom: {
+        _id: chatRoom._id,
+        name: chatRoom.name,
+        memberCount: chatRoom.members.length
+      }
+    });
+  } catch (error) {
+    console.error('Join chat room error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to join chat room",
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
+  }
+};
+
+// Enhanced createChatRoom function
+const createChatRoom = async (programId, programTitle) => {
+  try {
+    const existingRoom = await ChatRoom.findOne({ program: programId });
+    if (existingRoom) return existingRoom;
+
+    // Get program details to set up proper moderation
+    const program = await programModel.findById(programId)
+      .populate('assignedCounselor assignedModerator counselors moderators');
+
+    const chatRoom = new ChatRoom({
+      program: programId,
+      name: `${programTitle} - Support Group`,
+      description: `Support chat for ${programTitle} participants`,
+      
+      // Set up moderation from program
+      moderators: [
+        ...(program?.assignedModerator ? [program.assignedModerator._id] : []),
+        ...(program?.moderators || []).map(m => m._id)
+      ],
+      counselors: [
+        ...(program?.assignedCounselor ? [program.assignedCounselor._id] : []),
+        ...(program?.counselors || []).map(c => c._id)
+      ],
+      
+      members: [],
+      messages: [{
+        senderRole: 'system',
+        content: `Welcome to the ${programTitle} support group! This is a safe space to share experiences and support each other. Please be respectful and follow community guidelines.`,
+        messageType: 'welcome'
+      }],
+      
+      // Default settings
+      settings: {
+        allowUserMessages: true,
+        requireApproval: false,
+        maxMessageLength: 1000,
+        allowReactions: true,
+        profanityFilter: true,
+        spamProtection: true
+      },
+      
+      status: 'active'
+    });
+
+    await chatRoom.save();
+    return chatRoom;
+  } catch (error) {
+    console.error('Error creating chat room:', error);
+    throw error;
+  }
+};
+
+// Function to update member online status
+const updateOnlineStatus = async (req, res) => {
+  try {
+    const { programId } = req.params;
+    const { isOnline } = req.body;
+    const userId = req.userId;
+
+    const chatRoom = await ChatRoom.findOne({ program: programId });
+    if (!chatRoom) {
+      return res.status(404).json({
+        success: false,
+        message: "Chat room not found"
+      });
+    }
+
+    await chatRoom.updateMemberStatus(userId, isOnline);
+
+    res.json({
+      success: true,
+      message: "Online status updated"
+    });
+  } catch (error) {
+    console.error('Update online status error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to update status"
+    });
+  }
+};
+
+// getChatRoom function to include counselor info
+const getChatRoom = async (req, res) => {
+  try {
+    const { programId } = req.params;
+    const userId = req.userId;
+
+    // Check if user is enrolled
+    const enrollment = await enrollmentModel.findOne({ 
+      user: userId, 
+      program: programId 
+    });
+
+    if (!enrollment) {
+      return res.status(403).json({ 
+        success: false, 
+        message: "You must be enrolled in this program to access the chat" 
+      });
+    }
+
+    // Get program with counselor details
+    const program = await programModel.findById(programId)
+      .populate('assignedCounselor', 'name email role avatar')
+      .populate('assignedModerator', 'name email role avatar')
+      .populate('counselors', 'name email role avatar')
+      .populate('moderators', 'name email role avatar');
+
+    // Find or create chat room
+    let chatRoom = await ChatRoom.findOne({ program: programId })
+      .populate('messages.sender', 'name email role avatar')
+      .populate('moderators', 'name email avatar')
+      .populate('members.user', 'name email role avatar')
+      .populate('program', 'title');
+
+    if (!chatRoom) {
+      chatRoom = new ChatRoom({
+        program: programId,
+        name: `${program.title} - Support Group`,
+        description: `Chat room for participants of ${program.title}`,
+        members: [{ user: userId }],
+        messages: [{
+          sender: userId,
+          senderRole: 'user',
+          content: 'Welcome to the support group!',
+          messageType: 'system'
+        }]
+      });
+      await chatRoom.save();
+    } else {
+      // Add user to members if not already added
+      const isMember = chatRoom.members.some(member => 
+        member.user.toString() === userId
+      );
+      
+      if (!isMember) {
+        chatRoom.members.push({ user: userId });
+        await chatRoom.save();
+      }
+    }
+
+    res.json({ 
+      success: true, 
+      chatRoom,
+      program: {
+        _id: program._id,
+        title: program.title,
+        assignedCounselor: program.assignedCounselor,
+        assignedModerator: program.assignedModerator,
+        counselors: program.counselors,
+        moderators: program.moderators
+      }
+    });
+  } catch (error) {
+    console.error('Get chat room error:', error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+ 
 export { registerUser, userLogin, 
          userInfo, updateProfile,
           bookAppointment, listAppointments, cancelAppointment, 
@@ -3148,7 +3838,7 @@ export { registerUser, userLogin,
           addMood, getMoodHistory, handleCrisisSupport, 
           counsellorList, joinLiveSession , getUserSessions, 
           getUserNotifications, notifyUser, markNotificationAsRead, markAllNotificationsAsRead, deleteNotification, getUnreadNotificationCount, 
-          getPrograms, enrollProgram, 
+          getPrograms, enrollProgram, getEnrolledPrograms,
           getCommunities, joinCommunity, leaveCommunity, 
           getWellnessActivities,getComments,
           getPosts, createPost,likePost, createComment,
@@ -3156,6 +3846,11 @@ export { registerUser, userLogin,
           getUserProgress, updateWeeklyStats, getMonthlyHistory, getUserCommunities, checkAndUpdateMonthlyStats, getUserPosts,
           recordCounselorAssessment, recordActivityCompletion, 
           getAssessmentInsights, generateRecommendations,
-          checkForNewBadges, getBadgeInfo,
+          checkForNewBadges, getBadgeInfo, getUserBadges, bulkAnalytics,
           createDonationPayment, donationWebhook, verifyDonationPayment,
-          cancelMonthlyDonation, getUserDonationHistory }
+          cancelMonthlyDonation, getUserDonationHistory, 
+          getChatHistory, getChatRoom, sendMessage, getChatParticipants, createChatRoom ,
+          joinChatRoom,
+          updateOnlineStatus
+}
+

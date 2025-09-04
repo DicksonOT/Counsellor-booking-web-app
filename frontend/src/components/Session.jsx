@@ -514,10 +514,10 @@ const UserSessions = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className="max-w-6xl mx-auto p-6 mt-30">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">My Sessions</h1>
+          <h1 className="text-2xl font-bold text-blue-600 mb-2">My Sessions</h1>
           <p className="text-gray-600">Manage your counselling sessions and appointments</p>
         </div>
         

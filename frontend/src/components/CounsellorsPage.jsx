@@ -202,16 +202,16 @@ const CounsellorsPage = () => {
             </div>
 
             {filterCoun.length > 0 ? (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                 {filterCoun.map((item, index) => (
                   <div
                     key={index}
                     onClick={() => navigate(`/appointment/${item._id}`)}
-                    className="w-65 border border-gray-200 rounded-xl overflow-hidden cursor-pointer hover:shadow-lg hover:-translate-y-2 transition-all duration-300 group hover:bg-blue-200"
+                    className=" border border-gray-200 rounded-xl overflow-hidden cursor-pointer hover:shadow-lg hover:-translate-y-2 transition-all duration-300 group hover:bg-blue-200"
                   >
                     <div className="relative overflow-hidden">
                       <img 
-                        className=" h-90 object-cover bg-blue-50 group-hover:scale-105transition-transform duration-300" 
+                        className=" h-95 w-full object-cover bg-blue-50 group-hover:scale-105transition-transform duration-300" 
                         src={item.image} 
                         alt={item.name}
                       />

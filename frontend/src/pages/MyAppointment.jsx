@@ -174,7 +174,7 @@ const MyAppointment = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen mt-9 bg-gray-50">
       {appointments.length === 0 ? (
         <div className="flex flex-col items-center justify-center min-h-96 px-5">
           <div className="text-center max-w-md">
@@ -196,8 +196,8 @@ const MyAppointment = () => {
       ) : (
         <div className="mx-5 pt-8 pb-8">
           <div className="mb-8">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">My Appointments</h1>
-            <p className="text-gray-600">Manage your counselling sessions and appointments</p>
+            <h1 className="text-2xl font-bold text-blue-600 mb-2">My Appointments</h1>
+            <p className="text-gray-600">Manage your counselling appointments</p>
           </div>
 
           <div className="space-y-6">

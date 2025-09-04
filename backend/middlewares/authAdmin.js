@@ -16,8 +16,6 @@ const authAdmin = async (req, res, next) =>{
             return res.json({success: false, message: 'Not authorised. Login again'})
         }
 
-        // req.userId = decoded.id;
-
         next()
 
     } catch (error) {

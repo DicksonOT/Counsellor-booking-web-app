@@ -48,6 +48,7 @@ const TherapySession = () => {
       socketRef.current.onerror = () => setError("WebSocket connection error");
       socketRef.current.onclose = () => setConnectionStatus("Connection closed");
     } catch (err) {
+      console.log(err)
       setError("Unable to start session. Check your camera/mic permissions.");
     }
   };

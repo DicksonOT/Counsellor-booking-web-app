@@ -1,5 +1,3 @@
-// Updated Communities component with proper member count updates
-
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../context/AppContext';
 import axios from 'axios';
@@ -26,10 +24,7 @@ const Communities = () => {
             if (filters.theme) params.append('theme', filters.theme);
             if (filters.search) params.append('search', filters.search);
 
-            const { data } = await axios.get(
-                `${backendUrl}/api/user/communities?${params.toString()}`, 
-                { headers: { token } }
-            );
+            const { data } = await axios.get(`${backendUrl}/api/user/communities?${params.toString()}`,  { headers: { token } } );
             
             if (data.success) {
                 setCommunities(data.communities || []);
@@ -156,7 +151,7 @@ const Communities = () => {
                 <div className="mb-4">
                     <button
                         onClick={() => setSelectedCommunity(null)}
-                        className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-gray-200 transition-colors"
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -178,7 +173,7 @@ const Communities = () => {
     return (
         <div className="p-6 bg-white rounded-lg shadow-lg">
             <div className="mb-6">
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">Support Communities</h2>
+                <h2 className="text-2xl font-bold text-blue-600 mb-2">Support Communities</h2>
                 <p className="text-gray-600">Find and join communities that align with your wellness journey</p>
             </div>
 
@@ -191,7 +186,7 @@ const Communities = () => {
                         placeholder="Search by name or description..."
                         value={filters.search}
                         onChange={(e) => setFilters({...filters, search: e.target.value})}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                 </div>
                 
@@ -247,9 +242,9 @@ const Communities = () => {
                     </div>
                 ) : (
                     communities.map((community) => (
-                        <div key={community._id} className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all duration-200 bg-white">
+                        <div key={community._id} className="border border-blue-200 rounded-lg p-6 hover:shadow-lg transition-all duration-200 bg-white">
                             <div className="flex justify-between items-start mb-3">
-                                <h3 className="text-lg font-semibold text-gray-800 line-clamp-2">{community.name}</h3>
+                                <h3 className="text-lg font-semibold text-blue-700 line-clamp-2">{community.name}</h3>
                                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                                     community.isMember ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
                                 }`}>

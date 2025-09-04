@@ -49,6 +49,15 @@ import {
   verifyDonationPayment,
   getUserDonationHistory,
   cancelMonthlyDonation,
+  getChatRoom, 
+  sendMessage, 
+  getChatHistory,
+  getEnrolledPrograms,
+  bulkAnalytics,
+  getUserBadges,
+  getChatParticipants,
+  updateOnlineStatus,
+  joinChatRoom
 } from '../controllers/userController.js'
 import authUser from '../middlewares/authUser.js'
 import upload from '../middlewares/multer.js'
@@ -112,8 +121,6 @@ userRouter.patch('/notifications/mark-all-read', authUser, markAllNotificationsA
 // Delete single notification
 userRouter.delete('/notifications/:notificationId', authUser, deleteNotification)
 
-userRouter.post("/enroll", authUser, enrollProgram);
-
 // Community routes
 userRouter.get('/communities', authUser, getCommunities);
 userRouter.post('/communities/:communityId/join', authUser, joinCommunity);
@@ -140,102 +147,27 @@ userRouter.get('/wellness/posts', authUser, getUserPosts);
 userRouter.get('/wellness/communities', authUser, getUserCommunities);
 
 // Get user badges
-userRouter.get('/badges', authUser, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const progress = await UserProgress.findOne({ user: userId }).select('badges totalScore');
-    
-    if (!progress) {
-      return res.json({ 
-        success: true, 
-        badges: [], 
-        totalScore: 0,
-        nextBadgeAt: 50
-      });
-    }
-    
-    const nextMilestone = Math.ceil(progress.totalScore / 50) * 50;
-    const nextBadgeAt = nextMilestone === progress.totalScore ? progress.totalScore + 50 : nextMilestone;
-    
-    res.json({ 
-      success: true, 
-      badges: progress.badges || [], 
-      totalScore: progress.totalScore || 0,
-      nextBadgeAt: nextBadgeAt
-    });
-  } catch (error) {
-    console.error('Error fetching badges:', error);
-    res.json({ success: false, message: 'Error fetching badges' });
-  }
-});
-
-// Bulk data route for analytics
-userRouter.get('/analytics', authUser, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const progress = await UserProgress.findOne({ user: userId });
-    
-    if (!progress) {
-      return res.json({ success: false, message: 'No data found' });
-    }
-
-    // Prepare analytics data
-    const last30Days = new Date();
-    last30Days.setDate(last30Days.getDate() - 30);
-
-    const recentActivities = progress.scoreHistory.filter(entry => 
-      new Date(entry.date) >= last30Days
-    );
-
-    // Daily breakdown
-    const dailyData = {};
-    recentActivities.forEach(entry => {
-      const dateKey = new Date(entry.date).toDateString();
-      if (!dailyData[dateKey]) {
-        dailyData[dateKey] = { points: 0, activities: 0, sources: new Set() };
-      }
-      dailyData[dateKey].points += entry.score;
-      dailyData[dateKey].activities += 1;
-      dailyData[dateKey].sources.add(entry.source);
-    });
-
-    // Convert Set to Array for JSON serialization
-    Object.keys(dailyData).forEach(date => {
-      dailyData[date].sources = Array.from(dailyData[date].sources);
-    });
-
-    const analytics = {
-      totalPoints: progress.totalScore,
-      wellnessPoints: progress.wellnessPoints,
-      last30Days: Object.entries(dailyData).map(([date, data]) => ({
-        date,
-        ...data
-      })).sort((a, b) => new Date(a.date) - new Date(b.date)),
-      streaks: progress.streaks,
-      monthlyStats: progress.monthlyStats,
-      weeklyStats: progress.weeklyStats,
-      badges: progress.badges || []
-    };
-
-    res.json({ success: true, analytics });
-  } catch (error) {
-    console.error(error);
-    res.json({ success: false, message: 'Error generating analytics' });
-  }
-});
-
-
+userRouter.get('/badges', authUser, getUserBadges);
+userRouter.get('/analytics', authUser, bulkAnalytics);
 
 // Public donation routes
 userRouter.post('/create-donation', createDonationPayment);
 userRouter.post('/verify-donation', verifyDonationPayment);
 
-// Protected user routes (require authentication)
+// Donations routes 
 userRouter.get('/donation-history', authUser, getUserDonationHistory);
 userRouter.post('/cancel-monthly-donation', authUser, cancelMonthlyDonation);
 
-// Webhook route (should be placed BEFORE express.json() middleware)
-// app.post('/api/donation-webhook', express.raw({type: 'application/json'}), donationWebhook);
 
+userRouter.post("/enroll", authUser, enrollProgram);
+userRouter.get('/get-enrollments', authUser, getEnrolledPrograms)
+
+// Chat rooms routes
+userRouter.get('/:programId', authUser, getChatRoom);
+userRouter.post('/program/:programId/send', authUser, sendMessage);
+userRouter.get('/program/:programId/messages', authUser, getChatHistory);
+userRouter.get('/program/:programId/participants', authUser, getChatParticipants);
+userRouter.post('/program/:programId/join',authUser, joinChatRoom);
+userRouter.put('/program/:programId/status',authUser,  updateOnlineStatus);
 
 export default userRouter

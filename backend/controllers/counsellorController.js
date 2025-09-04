@@ -15,6 +15,7 @@ import WellnessActivity from '../models/activityModel.js'
 import { Report } from '../models/communityModel.js';
 import { sendActivityNotifications } from '../utils/utils.js'
 import { activityTemplates, validateActivityData, getActivityTemplate } from '../utils/activityTemplate.js'
+import ChatRoom from '../models/chatModel.js'
 
 // API for counsellor register
 const registerCounsellor = async (req, res) => {
@@ -285,6 +286,84 @@ const updateProfile = async (req, res) => {
   }
 };
 
+// API to get counsellor clients
+const getCounsellorClients = async (req, res) => {
+  try {
+    const counId = req.counId;
+    const { search } = req.query; 
+
+    // Get all appointments for this counsellor
+    const appointments = await appointmentModel.find({ 
+      counId: counId,
+      cancelled: false,
+      userId: { $ne: null } // Only get appointments with userId
+    }).sort({ date: -1 });
+
+    if (appointments.length === 0) {
+      return res.json({
+        success: true,
+        clients: [],
+        totalClients: 0,
+        message: "No clients found"
+      });
+    }
+
+    // Get unique user IDs
+    const userIds = [...new Set(appointments.map(apt => apt.userId))];
+
+    // Build user search query
+    let userQuery = { _id: { $in: userIds } };
+    if (search && search.trim() !== '') {
+      userQuery.name = { $regex: search.trim(), $options: 'i' };
+    }
+
+    // Find users manually
+    const users = await userModel.find(userQuery).select('name email image gender');
+
+    // Get the most recent appointment for each user
+    const clientsWithAppointments = await Promise.all(
+      users.map(async (user) => {
+        // Find the most recent appointment for this user
+        const recentAppointment = appointments.find(apt => 
+          apt.userId.toString() === user._id.toString()
+        );
+
+        return {
+          _id: user._id,
+          name: user.name || 'Unknown',
+          email: user.email || 'No email',
+          image: user.image || null,
+          // Include current/recent appointment details
+          currentAppointment: recentAppointment ? {
+            _id: recentAppointment._id,
+            date: recentAppointment.date,
+            slotTime: recentAppointment.slotTime,
+            amount: recentAppointment.amount,
+            payment: recentAppointment.payment,
+            isCompleted: recentAppointment.isCompleted,
+            cancelled: recentAppointment.cancelled,
+            counId: recentAppointment.counId
+          } : null
+        };
+      })
+    );
+
+    // Sort clients alphabetically by name
+    clientsWithAppointments.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+    res.json({
+      success: true,
+      clients: clientsWithAppointments,
+      totalClients: clientsWithAppointments.length,
+      message: search ? `Found ${clientsWithAppointments.length} clients matching "${search}"` : `Retrieved ${clientsWithAppointments.length} clients`
+    });
+
+  } catch (error) {
+    console.log("Error fetching counsellor clients:", error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
 // API for manually assessing users (by counselor)
 const manualAssessment = async (req, res) => {
   const counId = req.counId; 
@@ -318,7 +397,6 @@ const manualAssessment = async (req, res) => {
     return res.json({ success: false, message: error.message });
   }
 };
-
 
 // API for user profile
 const getUserProfile = async (req, res) => {
@@ -1270,6 +1348,587 @@ const reviewReport = async (req, res) => {
   }
 };
 
+// Fetch all chat rooms assigned to counsellor
+const getCounsellorChatRooms = async (req, res) => {
+  try {
+    const counId = req.counId; // Use req.counId
+
+    if (!counId) {
+      return res.status(401).json({ success: false, message: "Authentication failed" });
+    }
+
+    console.log("Fetching chat rooms for counsellor:", counId);
+
+    // Find chat rooms where the counselor is assigned to the program
+    const chatRooms = await ChatRoom.find()
+      .populate({
+        path: "program",
+        match: { 
+          $or: [
+            { counselors: counId }, 
+            { assignedCounselor: counId }
+          ]
+        },
+        select: "title description status"
+      })
+      .lean();
+
+    // Filter out rooms where program didn't match
+    const validRooms = chatRooms.filter(room => room.program !== null);
+
+    const response = validRooms.map(room => ({
+      _id: room._id, // THIS IS YOUR ROOM ID
+      name: room.name,
+      program: room.program,
+      stats: {
+        totalMembers: room.stats?.totalMembers || room.members?.length || 0,
+        totalMessages: room.stats?.totalMessages || room.messages?.length || 0,
+        onlineMembers: room.stats?.onlineMembers || 0,
+        activeSession: room.activeSession?.isActive || false,
+        lastActivity: room.stats?.lastActivity
+      },
+      status: room.status,
+      lastMessage: room.lastMessage
+    }));
+
+    console.log("Found rooms:", response.length);
+    res.json({ success: true, chatRooms: response });
+  } catch (err) {
+    console.error("Fetch counsellor chat rooms error:", err);
+    res.status(500).json({ 
+      success: false, 
+      message: "Error fetching chat rooms", 
+      error: err.message 
+    });
+  }
+};
+
+// Get details for one room
+const getChatRoomDetails = async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const counId = req.counId; 
+
+    if (!counId) {
+      return res.status(401).json({ success: false, message: "Authentication failed" });
+    }
+
+    console.log("Getting room details for:", roomId, "Counsellor:", counId);
+
+    const room = await ChatRoom.findById(roomId)
+      .populate({
+        path: "program",
+        select: "title description counselors assignedCounselor"
+      })
+      .populate({
+        path: "members.user",
+        select: "name email image"
+      })
+      .lean();
+
+    if (!room) {
+      return res.status(404).json({ success: false, message: "Chat room not found" });
+    }
+
+    // FIXED: Convert ObjectIds to strings for proper comparison
+    const counselorIds = room.program?.counselors?.map(id => id.toString()) || [];
+    const assignedCounselorId = room.program?.assignedCounselor?.toString();
+    const currentCounselorId = counId.toString();
+
+    const hasAccess = counselorIds.includes(currentCounselorId) || 
+                     assignedCounselorId === currentCounselorId;
+
+    // Debug logging
+    console.log("Access check debug:", {
+      currentCounselorId,
+      counselorIds,
+      assignedCounselorId,
+      hasAccess
+    });
+
+    if (!hasAccess) {
+      return res.status(403).json({ 
+        success: false, 
+        message: "Access denied. You are not assigned to this program." 
+      });
+    }
+
+    // Add computed stats
+    room.computedStats = {
+      totalMembers: room.members?.length || 0,
+      totalMessages: room.messages?.length || 0,
+      onlineMembers: room.members?.filter(m => m.isOnline)?.length || 0,
+      activeSession: room.activeSession?.isActive || false,
+    };
+
+    res.json({ success: true, room });
+  } catch (err) {
+    console.error("Fetch room details error:", err);
+    res.status(500).json({ 
+      success: false, 
+      message: "Error fetching room details", 
+      error: err.message 
+    });
+  }
+};
+
+// Start a session
+const startSession = async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const { title, agenda, topic } = req.body;
+    const counId = req.counId;
+
+    const room = await ChatRoom.findById(roomId)
+      .populate("program", "counselors assignedCounselor");
+
+    if (!room) {
+      return res.status(404).json({ success: false, message: "Chat room not found" });
+    }
+
+    // Check access
+    const hasAccess = room.program?.counselors?.includes(counId) || 
+                     room.program?.assignedCounselor?.toString() === counId.toString();
+
+    if (!hasAccess) {
+      return res.status(403).json({ 
+        success: false, 
+        message: "Access denied. You are not assigned to this program." 
+      });
+    }
+
+    // Check if session is already active
+    if (room.activeSession?.isActive) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "A session is already active in this room" 
+      });
+    }
+
+    // Start new session
+    room.activeSession = {
+      isActive: true,
+      startedBy: counId,
+      startedAt: new Date(),
+      title: title || "Counseling Session",
+      agenda: agenda || "",
+      topic: topic || "",
+      participants: []
+    };
+
+    // Add system message about session start
+    room.messages.push({
+      senderRole: 'system',
+      content: `Session "${room.activeSession.title}" has been started by counselor`,
+      messageType: 'session_start'
+    });
+
+    await room.save();
+
+    res.json({ 
+      success: true, 
+      message: "Session started successfully", 
+      session: room.activeSession 
+    });
+  } catch (err) {
+    console.error("Start session error:", err);
+    res.status(500).json({ 
+      success: false, 
+      message: "Error starting session", 
+      error: err.message 
+    });
+  }
+};
+
+// End a session
+const endSession = async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const { notes } = req.body;
+    const counId = req.counId;
+
+    const room = await ChatRoom.findById(roomId)
+      .populate("program", "counselors assignedCounselor");
+
+    if (!room) {
+      return res.status(404).json({ success: false, message: "Chat room not found" });
+    }
+
+    // Check access
+    const hasAccess = room.program?.counselors?.includes(counId) || 
+                     room.program?.assignedCounselor?.toString() === counId.toString();
+
+    if (!hasAccess) {
+      return res.status(403).json({ 
+        success: false, 
+        message: "Access denied" 
+      });
+    }
+
+    // Check if session is active
+    if (!room.activeSession?.isActive) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "No active session to end" 
+      });
+    }
+
+    // End session
+    room.activeSession.isActive = false;
+    room.activeSession.endedAt = new Date();
+    if (notes) {
+      room.activeSession.notes = notes;
+    }
+
+    // Add system message about session end
+    room.messages.push({
+      senderRole: 'system',
+      content: `Session "${room.activeSession.title}" has ended`,
+      messageType: 'session_end'
+    });
+
+    await room.save();
+
+    res.json({ 
+      success: true, 
+      message: "Session ended successfully", 
+      session: room.activeSession 
+    });
+  } catch (err) {
+    console.error("End session error:", err);
+    res.status(500).json({ 
+      success: false, 
+      message: "Error ending session", 
+      error: err.message 
+    });
+  }
+};
+
+// Mute a user in the chat room
+const muteUser = async (req, res) => {
+  try {
+    const { roomId, userId } = req.params;
+    const { duration, reason } = req.body; // duration in minutes
+    const counId = req.counId;
+
+    const room = await ChatRoom.findById(roomId)
+      .populate("program", "counselors assignedCounselor");
+
+    if (!room) {
+      return res.status(404).json({ success: false, message: "Chat room not found" });
+    }
+
+    // Check access
+    const hasAccess = room.program?.counselors?.includes(counId) || 
+                     room.program?.assignedCounselor?.toString() === counId.toString();
+
+    if (!hasAccess) {
+      return res.status(403).json({ success: false, message: "Access denied" });
+    }
+
+    // Find the member
+    const member = room.members.find(m => m.user.toString() === userId);
+    if (!member) {
+      return res.status(404).json({ success: false, message: "User not found in this room" });
+    }
+
+    // Mute the user
+    member.isMuted = true;
+    member.mutedBy = counId;
+    
+    if (duration) {
+      member.mutedUntil = new Date(Date.now() + (duration * 60 * 1000));
+    }
+
+    // Add to warning history
+    member.warningHistory.push({
+      reason: reason || "Muted by counselor",
+      issuedBy: counId,
+      issuedAt: new Date()
+    });
+
+    // Update permissions
+    member.permissions.canSendMessages = false;
+
+    // Add system message
+    room.messages.push({
+      senderRole: 'system',
+      content: `A user has been muted${duration ? ` for ${duration} minutes` : ''}`,
+      messageType: 'system'
+    });
+
+    await room.save();
+
+    res.json({ 
+      success: true, 
+      message: `User muted successfully${duration ? ` for ${duration} minutes` : ''}` 
+    });
+  } catch (err) {
+    console.error("Mute user error:", err);
+    res.status(500).json({ 
+      success: false, 
+      message: "Error muting user", 
+      error: err.message 
+    });
+  }
+};
+
+// Unmute a user
+const unmuteUser = async (req, res) => {
+  try {
+    const { roomId, userId } = req.params;
+    const counId = req.counId;
+
+    const room = await ChatRoom.findById(roomId)
+      .populate("program", "counselors assignedCounselor");
+
+    if (!room) {
+      return res.status(404).json({ success: false, message: "Chat room not found" });
+    }
+
+    // Check access
+    const hasAccess = room.program?.counselors?.includes(counId) || 
+                     room.program?.assignedCounselor?.toString() === counId.toString();
+
+    if (!hasAccess) {
+      return res.status(403).json({ success: false, message: "Access denied" });
+    }
+
+    // Find the member
+    const member = room.members.find(m => m.user.toString() === userId);
+    if (!member) {
+      return res.status(404).json({ success: false, message: "User not found in this room" });
+    }
+
+    // Unmute the user
+    member.isMuted = false;
+    member.mutedUntil = null;
+    member.mutedBy = null;
+    member.permissions.canSendMessages = true;
+
+    // Add system message
+    room.messages.push({
+      senderRole: 'system',
+      content: `A user has been unmuted`,
+      messageType: 'system'
+    });
+
+    await room.save();
+
+    res.json({ 
+      success: true, 
+      message: "User unmuted successfully" 
+    });
+  } catch (err) {
+    console.error("Unmute user error:", err);
+    res.status(500).json({ 
+      success: false, 
+      message: "Error unmuting user", 
+      error: err.message 
+    });
+  }
+};
+
+// Remove a user from the chat room
+const removeUser = async (req, res) => {
+  try {
+    const { roomId, userId } = req.params;
+    const { reason } = req.body;
+    const counId = req.counId;
+
+    const room = await ChatRoom.findById(roomId)
+      .populate("program", "counselors assignedCounselor");
+
+    if (!room) {
+      return res.status(404).json({ success: false, message: "Chat room not found" });
+    }
+
+    // Check access
+    const hasAccess = room.program?.counselors?.includes(counId) || 
+                     room.program?.assignedCounselor?.toString() === counId.toString();
+
+    if (!hasAccess) {
+      return res.status(403).json({ success: false, message: "Access denied" });
+    }
+
+    // Remove the member
+    const initialLength = room.members.length;
+    room.members = room.members.filter(m => m.user.toString() !== userId);
+
+    if (room.members.length === initialLength) {
+      return res.status(404).json({ success: false, message: "User not found in this room" });
+    }
+
+    // Add system message
+    room.messages.push({
+      senderRole: 'system',
+      content: `A user has been removed from the chat${reason ? ` (${reason})` : ''}`,
+      messageType: 'system'
+    });
+
+    await room.save();
+
+    res.json({ 
+      success: true, 
+      message: "User removed successfully",
+      roomId: room._id 
+    });
+  } catch (err) {
+    console.error("Remove user error:", err);
+    res.status(500).json({ 
+      success: false, 
+      message: "Error removing user", 
+      error: err.message 
+    });
+  }
+};
+
+// Send a message as counselor
+const sendCounsellorMessage = async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const { content, messageType } = req.body;
+    const counId = req.counId;
+
+    if (!content || content.trim() === '') {
+      return res.status(400).json({ success: false, message: "Message content is required" });
+    }
+
+    const room = await ChatRoom.findById(roomId)
+      .populate("program", "counselors assignedCounselor");
+
+    if (!room) {
+      return res.status(404).json({ success: false, message: "Chat room not found" });
+    }
+
+    // Check access
+    const hasAccess = room.program?.counselors?.includes(counId) || 
+                     room.program?.assignedCounselor?.toString() === counId.toString();
+
+    if (!hasAccess) {
+      return res.status(403).json({ success: false, message: "Access denied" });
+    }
+
+    // Use the ChatRoom method to send message
+    const message = await room.sendMessage(
+      counId, 
+      content.trim(), 
+      messageType || 'text', 
+      'counselor'
+    );
+
+    res.json({ 
+      success: true, 
+      message: "Message sent successfully",
+      messageData: message
+    });
+  } catch (err) {
+    console.error("Send counselor message error:", err);
+    res.status(500).json({ 
+      success: false, 
+      message: err.message || "Error sending message"
+    });
+  }
+};
+
+// Get chat room messages with pagination
+const getChatRoomMessages = async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const { page = 1, limit = 50 } = req.query;
+    const counId = req.counId;
+
+    const room = await ChatRoom.findById(roomId)
+      .populate("program", "counselors assignedCounselor")
+      .populate({
+        path: "messages.sender",
+        select: "name email image role"
+      })
+      .lean();
+
+    if (!room) {
+      return res.status(404).json({ success: false, message: "Chat room not found" });
+    }
+
+    // Check access
+    const hasAccess = room.program?.counselors?.includes(counId) || 
+                     room.program?.assignedCounselor?.toString() === counId.toString();
+
+    if (!hasAccess) {
+      return res.status(403).json({ success: false, message: "Access denied" });
+    }
+
+    // Paginate messages (get latest first)
+    const startIndex = Math.max(0, room.messages.length - (page * limit));
+    const endIndex = room.messages.length - ((page - 1) * limit);
+    
+    const messages = room.messages
+      .slice(startIndex, endIndex)
+      .reverse(); // Show newest first
+
+    res.json({ 
+      success: true, 
+      messages,
+      pagination: {
+        currentPage: parseInt(page),
+        totalMessages: room.messages.length,
+        hasMore: startIndex > 0
+      }
+    });
+  } catch (err) {
+    console.error("Get messages error:", err);
+    res.status(500).json({ 
+      success: false, 
+      message: "Error fetching messages", 
+      error: err.message 
+    });
+  }
+};
+
+// Update room settings (counselor only)
+const updateRoomSettings = async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const { settings } = req.body;
+    const counId = req.counId;
+
+    const room = await ChatRoom.findById(roomId)
+      .populate("program", "counselors assignedCounselor");
+
+    if (!room) {
+      return res.status(404).json({ success: false, message: "Chat room not found" });
+    }
+
+    // Check access
+    const hasAccess = room.program?.counselors?.includes(counId) || 
+                     room.program?.assignedCounselor?.toString() === counId.toString();
+
+    if (!hasAccess) {
+      return res.status(403).json({ success: false, message: "Access denied" });
+    }
+
+    // Update settings
+    if (settings) {
+      room.settings = { ...room.settings, ...settings };
+    }
+
+    await room.save();
+
+    res.json({ 
+      success: true, 
+      message: "Room settings updated successfully",
+      settings: room.settings
+    });
+  } catch (err) {
+    console.error("Update room settings error:", err);
+    res.status(500).json({ 
+      success: false, 
+      message: "Error updating room settings", 
+      error: err.message 
+    });
+  }
+};
+
 export {
   registerCounsellor,
   counsellorLogin,
@@ -1277,6 +1936,7 @@ export {
   counsellorAppointments,
   appointmentComplete,
   appointmentCancelled,
+  getCounsellorClients,
   dashBoard,
   profileData,
   updateProfile,
@@ -1300,5 +1960,7 @@ export {
   createInAppNotification,
   sendRealTimeNotification,
   getActivityTemplates,
-  getTemplateDetails
+  getTemplateDetails,
+  removeUser, endSession, muteUser,startSession, getCounsellorChatRooms,
+  unmuteUser, getChatRoomDetails , sendCounsellorMessage, getChatRoomMessages, updateRoomSettings
 };

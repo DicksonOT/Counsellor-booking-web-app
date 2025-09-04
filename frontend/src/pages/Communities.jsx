@@ -23,10 +23,13 @@ const CommunitiesPage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-100">
+        <div className="min-h-screen bg-blue-50 mt-28">
             <div className="container mx-auto py-6">
                 <div className="mb-6">
-                    <h1 className="text-3xl font-bold text-gray-800">Your Wellness Dashboard</h1>
+                    <div className="flex items-baseline gap-2 mt-8">
+                        <h1 className="text-3xl font-bold text-gray-800">Your Wellness,</h1>
+                        <h1 className="text-3xl font-bold text-blue-600">Our Priority</h1>
+                    </div>
                     <p className="text-gray-600">Connect, grow, and track your mental health journey</p>
                 </div>
 
@@ -39,11 +42,10 @@ const CommunitiesPage = () => {
                         <button
                             key={tab.key}
                             onClick={() => setActiveTab(tab.key)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-                                activeTab === tab.key
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === tab.key
                                     ? 'bg-blue-600 text-white shadow-md'
                                     : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
-                            }`}
+                                }`}
                         >
                             <span>{tab.icon}</span>
                             {tab.label}

@@ -449,13 +449,13 @@ const CommunityPosts = ({ communityId, communityName }) => {
                 /* Posts display */
                 <div className="space-y-6">
                     {posts.map((post) => (
-                        <div key={post._id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+                        <div key={post._id} className="border border-blue-200 rounded-lg p-6 hover:shadow-md transition-shadow">
                             <div className="flex items-start justify-between mb-3">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                                        <span className="text-blue-600 font-semibold">
-                                            {post.author?.name?.charAt(0).toUpperCase() || 'U'}
-                                        </span>
+                                    <div className="w-10 h-10 flex items-center justify-center">
+                                        <img className="text-blue-600 font-semibold rounded-full"
+                                            src= {post.author?.image || 'U'}
+                                        />
                                     </div>
                                     <div>
                                         <h4 className="font-semibold text-gray-800">
@@ -496,7 +496,7 @@ const CommunityPosts = ({ communityId, communityName }) => {
                                 <button 
                                     onClick={() => handleLikePost(post._id)}
                                     className={`flex items-center gap-2 transition-colors ${
-                                        post.isLiked ? 'text-red-500' : 'hover:text-red-500'
+                                        post.isLiked ? 'text-blue-500' : 'hover:blue-red-500'
                                     }`}
                                 >
                                     <svg 

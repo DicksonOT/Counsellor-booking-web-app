@@ -5,21 +5,25 @@ const authUser = async (req, res, next) => {
     try {
         const { token } = req.headers
         if (!token) {
-            return res.json({ success: false, message: "Not authorised. Log in" })
+            return res.status(401).json({ success: false, message: "Not authorised. Log in" })
         } 
 
-        const decode_token = jwt.verify(token, process.env.JWT_SECRET)
-        req.userId = decode_token.id
+        const decoded = jwt.verify(token, process.env.JWT_SECRET)
+        req.userId = decoded.id
 
-        const userData = await userModel.findById(decode_token.id).select('email')
-        if (userData) {
-            req.userEmail = userData.email
+        // Fetch user with role
+        const user = await userModel.findById(decoded.id).select('email role name')
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" })
         }
+
+        // Attach full user object for later use
+        req.user = user  
 
         next()
     } catch (error) {
         console.log(error)
-        res.json({ success: false, message: error.message })
+        res.status(401).json({ success: false, message: "Unauthorized" })
     }
 }
 
