@@ -8,7 +8,8 @@ export const AdminContext = createContext()
 const AdminContextProvider = (props) =>{
 
     const [aToken, setAToken]= useState(localStorage.getItem('aToken') ? localStorage.getItem('aToken') : '')
-    const backendUrl= import.meta.env.VITE_BACKEND_URL
+    const backendUrl = "http://localhost:4000"
+    console.log("This is the backend url: ", backendUrl);
     const [counsellors, setCounsellors]=useState([])
     const [appointments, setAppointments] = useState([])
     const [dashboardData, setDashboardData] = useState(false)

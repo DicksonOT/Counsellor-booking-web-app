@@ -30,6 +30,7 @@ const Login = () => {
 
       //Counsellor API
       } else {
+        console.log(backendUrl)
           const {data} = await axios.post(`${backendUrl}/api/counsellor/login`, {email, password})
 
           if(data.success){

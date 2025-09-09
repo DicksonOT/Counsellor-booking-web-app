@@ -9,7 +9,7 @@ const CounsellorContextProvider = (props) => {
     const [appointments, setAppointments] = useState([])
     const [dashInfo, setDashInfo] = useState(false)
     const [counsellorInfo, setCounsellorInfo] = useState(false)
-    const backendUrl = import.meta.env.VITE_BACKEND_URL
+    const backendUrl = "http://localhost:4000"
 
     const getCounsellorAppointments = async () => {
         try {

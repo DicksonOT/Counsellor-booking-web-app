@@ -316,4 +316,4 @@ const TherapySession = () => {
   );
 };
 
-export default TherapySession;
+export default TherapySession
