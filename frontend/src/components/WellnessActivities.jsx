@@ -155,7 +155,7 @@ const WellnessActivities = () => {
     }
 
     return (
-        <div className="p-6 bg-white rounded-lg shadow-lg mt-35">
+        <div className="p-6 rounded-lg shadow-lg mt-35">
             <div className="mb-6">
                 <h2 className="text-2xl font-bold text-blue-600 mb-2">Wellness Activities</h2>
                 <p className="text-gray-600">Discover activities to enhance your mental well-being</p>

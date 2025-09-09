@@ -1,5 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { AdminContext } from '../../context/AdminContext';
+// import { formatProgramDuration, formatProgramRating, formatInstructorName, formatProgramForForm } from '../../utils/programUtils';
 import {
   Plus,
   Search,
@@ -32,7 +33,7 @@ const ProgramFormModal = ({ isOpen, isEdit = false, program = null, onClose, onS
     outcome: '',
     features: [''],
     price: 'Free',
-    thumbnail: ''
+    image: null
   });
 
   const [localErrors, setLocalErrors] = useState({});
@@ -59,7 +60,7 @@ const ProgramFormModal = ({ isOpen, isEdit = false, program = null, onClose, onS
         outcome: program.outcome || '',
         features: program.features && program.features.length > 0 ? program.features : [''],
         price: program.price || 'Free',
-        thumbnail: program.thumbnail || ''
+        image: null
       });
       setLocalPreviewImage(program.thumbnail || '');
     } else {
@@ -74,7 +75,7 @@ const ProgramFormModal = ({ isOpen, isEdit = false, program = null, onClose, onS
         outcome: '',
         features: [''],
         price: 'Free',
-        thumbnail: ''
+        image: null
       });
       setLocalPreviewImage('');
     }
@@ -86,6 +87,37 @@ const ProgramFormModal = ({ isOpen, isEdit = false, program = null, onClose, onS
     setLocalFormData(prev => ({ ...prev, [name]: value }));
     if (localErrors[name]) {
       setLocalErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const handleLocalImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setLocalErrors(prev => ({ ...prev, image: 'Please select a valid image file' }));
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setLocalErrors(prev => ({ ...prev, image: 'Image size must be less than 5MB' }));
+        return;
+      }
+
+      setLocalFormData(prev => ({ ...prev, image: file }));
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setLocalPreviewImage(e.target.result);
+      };
+      reader.readAsDataURL(file);
+
+      // Clear any previous errors
+      if (localErrors.image) {
+        setLocalErrors(prev => ({ ...prev, image: '' }));
+      }
     }
   };
 
@@ -114,11 +146,6 @@ const ProgramFormModal = ({ isOpen, isEdit = false, program = null, onClose, onS
     }
   };
 
-  const handleLocalImagePreview = (url) => {
-    setLocalPreviewImage(url);
-    setLocalFormData(prev => ({ ...prev, thumbnail: url }));
-  };
-
   const validateLocalForm = () => {
     const newErrors = {};
     if (!localFormData.title.trim()) newErrors.title = 'Program title is required';
@@ -138,11 +165,29 @@ const ProgramFormModal = ({ isOpen, isEdit = false, program = null, onClose, onS
 
     setLocalIsSubmitting(true);
     try {
-      const programData = {
-        ...localFormData,
-        features: localFormData.features.filter(f => f.trim() !== '')
-      };
-      await onSubmit(programData);
+      // Create FormData for file upload
+      const formData = new FormData();
+
+      // Add all form fields
+      formData.append('title', localFormData.title);
+      formData.append('description', localFormData.description);
+      formData.append('duration', localFormData.duration);
+      formData.append('difficulty', localFormData.difficulty);
+      formData.append('category', localFormData.category);
+      formData.append('instructor', localFormData.instructor);
+      formData.append('outcome', localFormData.outcome);
+      formData.append('price', localFormData.price);
+
+      // Add features as JSON string
+      const validFeatures = localFormData.features.filter(f => f.trim() !== '');
+      formData.append('features', JSON.stringify(validFeatures));
+
+      // Add image file if present
+      if (localFormData.image) {
+        formData.append('image', localFormData.image);
+      }
+
+      await onSubmit(formData);
     } catch (error) {
       console.error('Error submitting form:', error);
     } finally {
@@ -333,29 +378,36 @@ const ProgramFormModal = ({ isOpen, isEdit = false, program = null, onClose, onS
             {localErrors.features && <p className="text-red-500 text-sm">{localErrors.features}</p>}
           </div>
 
-          {/* Thumbnail */}
+          {/* Image Upload */}
           <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-            <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Program Thumbnail</h3>
+            <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Program Image</h3>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Thumbnail Image URL</label>
-              <div className="flex space-x-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Upload Program Image {!isEdit && '*'}
+              </label>
+              <div className="flex items-center space-x-4">
                 <input
-                  type="url"
-                  name="thumbnail"
-                  value={localFormData.thumbnail}
-                  onChange={handleLocalInputChange}
-                  className={`flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 ${isEdit ? 'focus:ring-green-500' : 'focus:ring-blue-500'} transition-colors ${localErrors.thumbnail ? 'border-red-500' : 'border-gray-300'}`}
-                  placeholder="https://example.com/image.jpg"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLocalImageChange}
+                  className="hidden"
+                  id="image-upload"
                 />
-                <button
-                  type="button"
-                  onClick={() => handleLocalImagePreview(localFormData.thumbnail)}
-                  disabled={!localFormData.thumbnail}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                  <Eye size={20} />
-                </button>
+                <label
+                  htmlFor="image-upload"
+                  className={`flex items-center px-4 py-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${localErrors.image ? 'border-red-500' : ''}`}
+                >
+                  <Upload size={20} className="mr-2" />
+                  Choose Image
+                </label>
+                <span className="text-sm text-gray-500">
+                  {localFormData.image ? localFormData.image.name : 'No file chosen'}
+                </span>
               </div>
-              {localErrors.thumbnail && <p className="text-red-500 text-sm mt-1">{localErrors.thumbnail}</p>}
+              {localErrors.image && <p className="text-red-500 text-sm mt-1">{localErrors.image}</p>}
+              <p className="text-xs text-gray-500 mt-1">
+                Supported formats: JPG, PNG, GIF. Max size: 5MB
+              </p>
 
               {localPreviewImage && (
                 <div className="mt-4">
@@ -363,10 +415,9 @@ const ProgramFormModal = ({ isOpen, isEdit = false, program = null, onClose, onS
                   <img
                     src={localPreviewImage}
                     alt="Preview"
-                    className="w-32 h-20 object-cover rounded-lg border"
+                    className="w-48 h-32 object-cover rounded-lg border"
                     onError={(e) => {
                       e.target.src = 'https://res.cloudinary.com/demo/image/upload/w_200,h_200,c_fill/r_max/f_auto/placeholder.jpg';
-                      setLocalPreviewImage('');
                     }}
                   />
                 </div>
@@ -474,15 +525,15 @@ const Programs = () => {
     }
   };
 
-  const handleSubmitAdd = async (programData) => {
-    const result = await addProgram(programData);
+  const handleSubmitAdd = async (formData) => {
+    const result = await addProgram(formData);
     if (result.success) {
       setShowAddProgram(false);
     }
   };
 
-  const handleSubmitEdit = async (programData) => {
-    const result = await updateProgram(selectedProgram._id, programData);
+  const handleSubmitEdit = async (formData) => {
+    const result = await updateProgram(selectedProgram._id, formData);
     if (result.success) {
       setShowEditProgram(false);
       setSelectedProgram(null);
@@ -601,7 +652,7 @@ const Programs = () => {
                   <Users className="w-4 h-4 mr-1" />
                   <span className="mr-4">{program.participants || 0}</span>
                   <Clock className="w-4 h-4 mr-1" />
-                  <span className="mr-4">{program.duration}</span>
+                  <span>Duration: {program.duration.value} {program.duration.unit}</span>
                   <Award className="w-4 h-4 mr-1" />
                   <span>{program.difficulty}</span>
                 </div>
@@ -609,9 +660,9 @@ const Programs = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
                     <Star className="w-4 h-4 text-yellow-400 mr-1" />
-                    <span className="text-sm font-medium">{program.rating || 0}</span>
+                    <span>Rating: {program.rating.average} ({program.rating.count} ratings)</span>
                   </div>
-                  <span className="text-sm text-gray-500">by {program.instructor}</span>
+                  <span>Instructor: {program.instructor.name}</span>
                 </div>
 
                 <div className="mt-4 pt-4 border-t">

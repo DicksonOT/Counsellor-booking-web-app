@@ -60,7 +60,6 @@ const programSchema = new mongoose.Schema({
     name: { type: String, required: true, default: "Anonymous Instructor" },
     title: { type: String, default: "" },
     bio: { type: String, default: "" },
-    image: { type: String, default: "" },
     credentials: { type: [String], default: [] }
   },
 

@@ -122,82 +122,84 @@ const AdminContextProvider = (props) =>{
             console.log('Programs loading completed');
         }
     }
-
-const addProgram = async (programData) => {
+const addProgram = async (formData) => {
   try {
+    setLoading(true);
     
-    const response = await axios.post(`${backendUrl}/api/admin/add-program`, programData, {
-      headers: { aToken} 
-    });
+    const response = await axios.post(`${backendUrl}/api/admin/add-program`, formData, {headers: {aToken}});
 
     const data = response.data;
     
-    // Refresh programs list
-    await getAllPrograms();
-    
-    return data;
+    if (data.success) {
+      toast.success(data.message);
+      await getAllPrograms(); // Refresh the programs list
+      return { success: true };
+    } else {
+      toast.error(data.message);
+      return { success: false, message: data.message };
+    }
   } catch (error) {
     console.error('Error adding program:', error);
-    
-    // Extract error message from Axios response
-    const errorMessage = error.response?.data?.message || 
-                        error.message || 
-                        'Failed to add program';
-    
-    throw new Error(errorMessage);
+    const errorMessage = error.response?.data?.message || 'Failed to add program. Please try again.';
+    toast.error(errorMessage);
+    return { success: false, message: errorMessage };
+  } finally {
+    setLoading(false);
   }
 };
 
-const updateProgram = async (id, programData) => {
+const updateProgram = async (programId, formData) => {
   try {
+    setLoading(true);
     
-    const response = await axios.put(`${backendUrl}/api/admin/update-program/${id}`, programData, {
-      headers: 
-        { aToken }
-    });
+    const response = await axios.put(`${backendUrl}/api/admin/update-program/${programId}`, formData, {headers: {aToken}});
 
     const data = response.data;
     
-    // Refresh programs list
-    await getAllPrograms();
-    
-    return data;
+    if (data.success) {
+      toast.success(data.message);
+      await getAllPrograms(); // Refresh the programs list
+      return { success: true };
+    } else {
+      toast.error(data.message);
+      return { success: false, message: data.message };
+    }
   } catch (error) {
     console.error('Error updating program:', error);
-    
-    // Extract error message from Axios response
-    const errorMessage = error.response?.data?.message || 
-                        error.message || 
-                        'Failed to update program';
-    
-    throw new Error(errorMessage);
+    const errorMessage = error.response?.data?.message || 'Failed to update program. Please try again.';
+    toast.error(errorMessage);
+    return { success: false, message: errorMessage };
+  } finally {
+    setLoading(false);
   }
 };
 
-const deleteProgram = async (id) => {
+
+const deleteProgram = async (programId) => {
   try {
+    setLoading(true);
     
-    const response = await axios.delete(`${backendUrl}/api/admin/delete-program/${id}`, {
-      headers: { aToken}
-    });
+    const response = await axios.delete(`${backendUrl}/api/admin/delete-program/${programId}`, {headers: {aToken}});
 
     const data = response.data;
     
-    // Refresh programs list
-    await getAllPrograms();
-    
-    return data;
+    if (data.success) {
+      toast.success(data.message);
+      await getAllPrograms(); // Refresh the programs list
+      return { success: true };
+    } else {
+      toast.error(data.message);
+      return { success: false, message: data.message };
+    }
   } catch (error) {
     console.error('Error deleting program:', error);
-    
-    // Extract error message from Axios response
-    const errorMessage = error.response?.data?.message || 
-                        error.message || 
-                        'Failed to delete program';
-    
-    throw new Error(errorMessage);
+    const errorMessage = error.response?.data?.message || 'Failed to delete program. Please try again.';
+    toast.error(errorMessage);
+    return { success: false, message: errorMessage };
+  } finally {
+    setLoading(false);
   }
-}
+};
 
  const getDonationAnalytics = async () => {
     try {

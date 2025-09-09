@@ -61,7 +61,7 @@ const Navbar = () => {
                     features: ['Short-term (1 week or less)', 'Counsellor-guided', 'Interactive']
                 },
                 {
-                    name: 'Support Groups',
+                    name: 'Support Communities',
                     path: '/communities',
                     description: 'Community forums',
                     features: ['Moderated', 'Safe space', 'Anonymous']

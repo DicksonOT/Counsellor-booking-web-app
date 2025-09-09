@@ -111,12 +111,27 @@ const updateProfile = async (req, res) => {
 
     await userModel.findByIdAndUpdate(userId, { name, phone, location, dob, gender })
 
-    if (imageFile) {
-      const imageUpload = await cloudinary.uploader.upload(imageFile.path, { resource_type: 'image' })
-      const imageUrl = imageUpload.secure_url
-
-      await userModel.findByIdAndUpdate(userId, { image: imageUrl })
+     if (imageFile) {
+      try {
+        const imageUpload = await cloudinary.uploader.upload(imageFile.path, { 
+          resource_type: "image",
+          folder: "Users",
+          transformation: [
+            { width: 800, height: 600, crop: "fill" },
+            { quality: "auto" }
+          ]
+        });
+         const imageUrl = imageUpload.secure_url;
+         await userModel.findByIdAndUpdate(userId, { image: imageUrl })
+      } catch (error) {
+        console.error("Image upload failed:", error);
+        return res.status(400).json({
+          success: false,
+          message: "Image upload failed. Please try again."
+        });
+      }
     }
+
 
     res.json({ success: true, message: 'Profile updated' })
   } catch (error) {
@@ -196,7 +211,8 @@ const bookAppointment = async (req, res) => {
     <p>Your appointment with <strong>${counData.name}</strong> has been successfully booked.</p>
     <p><strong>Date:</strong> ${slotDate}<br/>
     <strong>Time:</strong> ${slotTime}<br/>
-    <strong>Location:</strong> ${counData.location}</p>
+    <strong>Location:</strong> ${counData.location}<br/>
+    Kindly proceed to make $<strong>payment of:</strong> ${counData.fees}</p>
     <p>Thank you for choosing Quiet Place.</p>
   `,
     };
@@ -281,7 +297,6 @@ const cancelAppointment = async (req, res) => {
 }
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
-
 
 // API for making payment
 const paymentStripe = async (req, res) => {
@@ -3670,11 +3685,19 @@ const joinChatRoom = async (req, res) => {
   }
 };
 
-// Enhanced createChatRoom function
-const createChatRoom = async (programId, programTitle) => {
+// createChatRoom function
+const createChatRoom = async (programId, programTitle, userId) => {
   try {
     const existingRoom = await ChatRoom.findOne({ program: programId });
-    if (existingRoom) return existingRoom;
+    if (existingRoom) {
+      // Add the enrolling user to the existing chat room if they're not a member
+      const isMember = existingRoom.members.some(member => member.user.toString() === userId.toString());
+      if (!isMember) {
+        existingRoom.members.push({ user: userId });
+        await existingRoom.save();
+      }
+      return existingRoom;
+    }
 
     // Get program details to set up proper moderation
     const program = await programModel.findById(programId)
@@ -3695,8 +3718,9 @@ const createChatRoom = async (programId, programTitle) => {
         ...(program?.counselors || []).map(c => c._id)
       ],
       
-      members: [],
+      members: [{ user: userId }], // Add the enrolling user as the first member
       messages: [{
+        sender: program.assignedCounselor._id, // Assign a valid sender to the welcome message
         senderRole: 'system',
         content: `Welcome to the ${programTitle} support group! This is a safe space to share experiences and support each other. Please be respectful and follow community guidelines.`,
         messageType: 'welcome'

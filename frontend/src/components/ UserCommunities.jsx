@@ -33,6 +33,7 @@ const Communities = () => {
             }
         } catch (error) {
             toast.error('Failed to fetch communities');
+            console.log(error)
         } finally {
             setLoading(false);
         }
@@ -139,6 +140,25 @@ const Communities = () => {
         setSelectedCommunity(community);
     };
 
+    // Handle image error
+    const handleImageError = (e) => {
+        e.target.style.display = 'none';
+        e.target.nextSibling.style.display = 'flex';
+    };
+
+    // Get image URL - handles both relative and absolute URLs
+    const getImageUrl = (imagePath) => {
+        if (!imagePath) return null;
+        
+        // If it's already a full URL, return as is
+        if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+            return imagePath;
+        }
+        
+        // If it's a relative path, prepend the backend URL
+        return `${backendUrl}${imagePath.startsWith('/') ? '' : '/'}${imagePath}`;
+    };
+
     useEffect(() => {
         fetchCommunities();
     }, [filters]);
@@ -242,116 +262,161 @@ const Communities = () => {
                     </div>
                 ) : (
                     communities.map((community) => (
-                        <div key={community._id} className="border border-blue-200 rounded-lg p-6 hover:shadow-lg transition-all duration-200 bg-white">
-                            <div className="flex justify-between items-start mb-3">
-                                <h3 className="text-lg font-semibold text-blue-700 line-clamp-2">{community.name}</h3>
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                    community.isMember ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
-                                }`}>
-                                    {community.isMember ? 'Member' : 'Open'}
-                                </span>
-                            </div>
-                            
-                            <p className="text-gray-600 mb-4 text-sm line-clamp-3 leading-relaxed">
-                                {community.description}
-                            </p>
-                            
-                            {/* Tags */}
-                            {community.tags && community.tags.length > 0 && (
-                                <div className="flex flex-wrap gap-2 mb-4">
-                                    {community.tags.slice(0, 3).map((tag, index) => (
-                                        <span key={index} className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs">
-                                            #{tag}
-                                        </span>
-                                    ))}
-                                    {community.tags.length > 3 && (
-                                        <span className="text-gray-500 text-xs px-2 py-1">
-                                            +{community.tags.length - 3} more
-                                        </span>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* Community Stats */}
-                            <div className="flex justify-between items-center text-sm text-gray-500 mb-4">
-                                <div className="flex items-center gap-4">
-                                    <span className="flex items-center gap-1">
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                                        </svg>
-                                        {community.memberCount || 0} members
+                        <div key={community._id} className="border border-blue-200 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-200 bg-white">
+                            {/* Community Image */}
+                            <div className="relative h-48 bg-gradient-to-r from-blue-100 to-blue-200">
+                                {community.image && getImageUrl(community.image) ? (
+                                    <>
+                                        <img
+                                            src={getImageUrl(community.image)}
+                                            alt={community.name}
+                                            onError={handleImageError}
+                                            className="w-full h-full object-cover"
+                                        />
+                                        {/* Fallback placeholder - hidden by default, shown on image error */}
+                                        <div 
+                                            className="absolute inset-0 flex items-center justify-center bg-gradient-to-r from-blue-100 to-blue-200"
+                                            style={{ display: 'none' }}
+                                        >
+                                            <div className="text-center">
+                                                <svg className="w-16 h-16 text-blue-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                                </svg>
+                                                <p className="text-blue-600 text-sm font-medium">Community Image</p>
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : (
+                                    // Default placeholder when no image
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <div className="text-center">
+                                            <svg className="w-16 h-16 text-blue-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                            </svg>
+                                            <p className="text-blue-600 text-sm font-medium">Community Image</p>
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                {/* Member Status Overlay */}
+                                <div className="absolute top-4 right-4">
+                                    <span className={`px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm ${
+                                        community.isMember 
+                                            ? 'bg-green-100/90 text-green-800 border border-green-200' 
+                                            : 'bg-blue-100/90 text-blue-800 border border-blue-200'
+                                    }`}>
+                                        {community.isMember ? 'Member' : 'Open'}
                                     </span>
-                                    <span className="flex items-center gap-1">
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-                                        </svg>
-                                        {community.postCount || 0} posts
-                                    </span>
                                 </div>
-                                <span className="capitalize bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs">
-                                    {community.category?.replace('_', ' ')}
-                                </span>
                             </div>
 
-                            {/* Action Buttons */}
-                            <div className="space-y-2">
-                                {/* View Posts Button (only for members) */}
-                                {community.isMember && (
-                                    <button
-                                        onClick={() => viewCommunityPosts(community)}
-                                        className="w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow-md flex items-center justify-center gap-2"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-                                        </svg>
-                                        View Posts & Discussions
-                                    </button>
+                            {/* Content */}
+                            <div className="p-6">
+                                <div className="mb-3">
+                                    <h3 className="text-lg font-semibold text-blue-700 line-clamp-2">{community.name}</h3>
+                                </div>
+                                
+                                <p className="text-gray-600 mb-4 text-sm line-clamp-3 leading-relaxed">
+                                    {community.description}
+                                </p>
+                                
+                                {/* Tags */}
+                                {community.tags && community.tags.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 mb-4">
+                                        {community.tags.slice(0, 3).map((tag, index) => (
+                                            <span key={index} className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs">
+                                                #{tag}
+                                            </span>
+                                        ))}
+                                        {community.tags.length > 3 && (
+                                            <span className="text-gray-500 text-xs px-2 py-1">
+                                                +{community.tags.length - 3} more
+                                            </span>
+                                        )}
+                                    </div>
                                 )}
 
-                                {/* Join/Leave Button */}
-                                <button
-                                    onClick={() => community.isMember ? 
-                                        leaveCommunity(community._id) : 
-                                        joinCommunity(community._id)
-                                    }
-                                    disabled={actionLoading[community._id]}
-                                    className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
-                                        community.isMember ?
-                                        'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 hover:border-red-300' :
-                                        'bg-green-600 text-white hover:bg-green-700 shadow-sm hover:shadow-md'
-                                    }`}
-                                >
-                                    {actionLoading[community._id] ? (
-                                        <span className="flex items-center justify-center gap-2">
-                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                                            {community.isMember ? 'Leaving...' : 'Joining...'}
-                                        </span>
-                                    ) : community.isMember ? (
-                                        <span className="flex items-center justify-center gap-2">
+                                {/* Community Stats */}
+                                <div className="flex justify-between items-center text-sm text-gray-500 mb-4">
+                                    <div className="flex items-center gap-4">
+                                        <span className="flex items-center gap-1">
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                                             </svg>
-                                            Leave Community
+                                            {community.memberCount || 0} members
                                         </span>
-                                    ) : (
-                                        <span className="flex items-center justify-center gap-2">
+                                        <span className="flex items-center gap-1">
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
                                             </svg>
-                                            Join Community
+                                            {community.postCount || 0} posts
                                         </span>
-                                    )}
-                                </button>
-                            </div>
-
-                            {/* Quick Stats for Members */}
-                            {community.isMember && (
-                                <div className="mt-3 pt-3 border-t border-gray-100">
-                                    <div className="flex justify-between text-xs text-gray-500">
-                                        <span>Last active: {community.lastActivity ? new Date(community.lastActivity).toLocaleDateString() : 'Recently'}</span>
                                     </div>
+                                    <span className="capitalize bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs">
+                                        {community.category?.replace('_', ' ')}
+                                    </span>
                                 </div>
-                            )}
+
+                                {/* Action Buttons */}
+                                <div className="space-y-2">
+                                    {/* View Posts Button (only for members) */}
+                                    {community.isMember && (
+                                        <button
+                                            onClick={() => viewCommunityPosts(community)}
+                                            className="w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow-md flex items-center justify-center gap-2"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                                            </svg>
+                                            View Posts & Discussions
+                                        </button>
+                                    )}
+
+                                    {/* Join/Leave Button */}
+                                    <button
+                                        onClick={() => community.isMember ? 
+                                            leaveCommunity(community._id) : 
+                                            joinCommunity(community._id)
+                                        }
+                                        disabled={actionLoading[community._id]}
+                                        className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+                                            community.isMember ?
+                                            'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 hover:border-red-300' :
+                                            'bg-green-600 text-white hover:bg-green-700 shadow-sm hover:shadow-md'
+                                        }`}
+                                    >
+                                        {actionLoading[community._id] ? (
+                                            <span className="flex items-center justify-center gap-2">
+                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                                                {community.isMember ? 'Leaving...' : 'Joining...'}
+                                            </span>
+                                        ) : community.isMember ? (
+                                            <span className="flex items-center justify-center gap-2">
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                                </svg>
+                                                Leave Community
+                                            </span>
+                                        ) : (
+                                            <span className="flex items-center justify-center gap-2">
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                                                </svg>
+                                                Join Community
+                                            </span>
+                                        )}
+                                    </button>
+                                </div>
+
+                                {/* Quick Stats for Members */}
+                                {community.isMember && (
+                                    <div className="mt-3 pt-3 border-t border-gray-100">
+                                        <div className="flex justify-between text-xs text-gray-500">
+                                            <span>Last active: {community.lastActivity ? new Date(community.lastActivity).toLocaleDateString() : 'Recently'}</span>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     ))
                 )}

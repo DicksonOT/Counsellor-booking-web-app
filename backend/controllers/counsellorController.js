@@ -49,12 +49,33 @@ const registerCounsellor = async (req, res) => {
 
     const cvUrl = req.files['cv']?.[0] ? await uploadToCloudinary(req.files['cv'][0].path) : null;
     const licenseUrl = req.files['license']?.[0] ? await uploadToCloudinary(req.files['license'][0].path) : null;
-    const imageUrl = req.files['image']?.[0] ? await uploadToCloudinary(req.files['image'][0].path) : null;
     const certificateUrls = req.files['certificates']
       ? await Promise.all(req.files['certificates'].map(file => uploadToCloudinary(file.path)))
       : [];
 
-    const newcoun = new counsellorModel({
+    let imageUrl = "default-counsellor.jpg"
+
+    if (req.files['image'] && req.files['image'].length > 0) {
+      try {
+        const imageFile = req.files['image'][0]; // Correctly access the first file object in the array
+        const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
+          resource_type: "image",
+          folder: "Counsellors",
+          transformation: [
+            { width: 800, height: 600, crop: "fill" },
+            { quality: "auto" }
+          ]
+        });
+        imageUrl = imageUpload.secure_url;
+      } catch (error) {
+        console.error("Image upload failed:", error);
+        return res.status(400).json({
+          success: false,
+          message: "Image upload failed. Please try again."
+        });
+      }
+    }
+    const newCounsellor = new counsellorModel({
       name,
       email,
       password: hashedPassword,
@@ -71,7 +92,7 @@ const registerCounsellor = async (req, res) => {
       certificatePaths: certificateUrls,
     });
 
-    await newcoun.save();
+    await newCounsellor.save();
 
     // Auto-reply email
     await transporter.sendMail({
@@ -80,7 +101,7 @@ const registerCounsellor = async (req, res) => {
       subject: 'Registration Received',
       html: `
         <p>Hello <b>${name}</b>,</p>
-        <p>Thank you for registering as a counselor with Quiet Place.</p>
+        <p>Thank you for registering as a counsellor with Quiet Place.</p>
         <p>Your application is under review. We'll get back to you shortly.</p>
         <br>
         <p>Warm regards,<br/>The Quiet Place Team</p>
@@ -126,7 +147,6 @@ const changeAvailability = async (req, res) => {
   try {
     const counId = req.counId
 
-    const counData = await counsellorModel.findById(counId)
     await counsellorModel.findByIdAndUpdate(counId, { available: !counData.available })
 
     res.json({ success: true, message: 'Availability Changed' })
@@ -271,10 +291,23 @@ const updateProfile = async (req, res) => {
     };
 
     if (image) {
-      const imageUpload = await cloudinary.uploader.upload(image.path, {
-        resource_type: "image"
-      });
-      updateData.image = imageUpload.secure_url;
+      try {
+        const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
+          resource_type: "image",
+          folder: "Counsellors",
+          transformation: [
+            { width: 800, height: 600, crop: "fill" },
+            { quality: "auto" }
+          ]
+        });
+        updateData.image = imageUpload.secure_url;
+      } catch (error) {
+        console.error("Image upload failed:", error);
+        return res.status(400).json({
+          success: false,
+          message: "Image upload failed. Please try again."
+        });
+      }
     }
 
     await counsellorModel.findByIdAndUpdate(counId, updateData, { new: true });
@@ -290,13 +323,12 @@ const updateProfile = async (req, res) => {
 const getCounsellorClients = async (req, res) => {
   try {
     const counId = req.counId;
-    const { search } = req.query; 
+    const { search } = req.query;
 
-    // Get all appointments for this counsellor
-    const appointments = await appointmentModel.find({ 
+    const appointments = await appointmentModel.find({
       counId: counId,
       cancelled: false,
-      userId: { $ne: null } // Only get appointments with userId
+      userId: { $ne: null }
     }).sort({ date: -1 });
 
     if (appointments.length === 0) {
@@ -324,7 +356,7 @@ const getCounsellorClients = async (req, res) => {
     const clientsWithAppointments = await Promise.all(
       users.map(async (user) => {
         // Find the most recent appointment for this user
-        const recentAppointment = appointments.find(apt => 
+        const recentAppointment = appointments.find(apt =>
           apt.userId.toString() === user._id.toString()
         );
 
@@ -366,7 +398,7 @@ const getCounsellorClients = async (req, res) => {
 
 // API for manually assessing users (by counselor)
 const manualAssessment = async (req, res) => {
-  const counId = req.counId; 
+  const counId = req.counId;
   const { userId, score } = req.body;
 
   if (!userId || typeof score !== 'number') {
@@ -374,7 +406,6 @@ const manualAssessment = async (req, res) => {
   }
 
   try {
-    // Update UserProgress directly
     const updatedProgress = await UserProgress.findOneAndUpdate(
       { user: userId },
       {
@@ -386,8 +417,8 @@ const manualAssessment = async (req, res) => {
       { new: true, upsert: true }
     ).populate('user', 'name email');
 
-    return res.json({ 
-      success: true, 
+    return res.json({
+      success: true,
       message: `User scored with ${score} points`,
       progress: updatedProgress
     });
@@ -595,8 +626,8 @@ const updateSessionStatus = async (req, res) => {
     // Notify user of status change
     if (status === 'active' || status === 'completed' || status === 'cancelled') {
       await notifyUserInSession(
-        session.userId._id, 
-        `Your session status has been updated to: ${status}`, 
+        session.userId._id,
+        `Your session status has been updated to: ${status}`,
         session
       );
     }
@@ -615,7 +646,7 @@ const startCall = async (req, res) => {
     const { sessionId } = req.params;
 
     const session = await sessionModel.findByIdAndUpdate(
-      sessionId, 
+      sessionId,
       { status: 'active', startTime: new Date() },
       { new: true }
     ).populate('userId', 'name');
@@ -636,11 +667,11 @@ const startCall = async (req, res) => {
       { ...session.toObject(), roomId }
     );
 
-    res.json({ 
-      success: true, 
-      message: 'Call started and user notified', 
+    res.json({
+      success: true,
+      message: 'Call started and user notified',
       roomId,
-      sessionUrl: session.sessionUrl 
+      sessionUrl: session.sessionUrl
     });
 
   } catch (error) {
@@ -706,7 +737,7 @@ const joinSession = async (req, res) => {
     await session.save();
 
     // Notify the other participant
-    const otherUserId = session.userId._id.toString() === userId ? 
+    const otherUserId = session.userId._id.toString() === userId ?
       session.counId._id : session.userId._id;
 
     await notifyUserInSession(otherUserId, `${session.userId.name} joined the session`, session);
@@ -727,7 +758,7 @@ const sendSessionNotifications = async (user, counselor, session) => {
       createInAppNotification(user._id, counselor, session),
       sendRealTimeNotification(user._id, counselor, session)
     ]);
-    
+
     console.log(`✅ All notifications sent for session ${session._id}`);
   } catch (error) {
     console.error('❌ Error sending session notifications:', error);
@@ -891,7 +922,7 @@ const notifyUserInSession = async (userId, message, sessionData) => {
 const getActivities = async (req, res) => {
   try {
     const counId = req.counId;
-    
+
     const activities = await WellnessActivity.find({ createdBy: counId })
       .populate('participants', 'name email image')
       .populate('createdBy', 'name')
@@ -899,9 +930,9 @@ const getActivities = async (req, res) => {
 
     console.log(`Found ${activities.length} activities for counsellor ${counId}`);
 
-    res.json({ 
-      success: true, 
-      activities: activities || [] 
+    res.json({
+      success: true,
+      activities: activities || []
     });
   } catch (error) {
     console.error('Get activities error:', error);
@@ -912,15 +943,15 @@ const getActivities = async (req, res) => {
 // API to create activity
 const createActivityWithTemplate = async (req, res) => {
   try {
-    const { 
-      title, 
-      description, 
-      activityType, 
-      duration, 
-      difficulty, 
-      instructions, 
-      resources, 
-      startDate, 
+    const {
+      title,
+      description,
+      activityType,
+      duration,
+      difficulty,
+      instructions,
+      resources,
+      startDate,
       endDate,
       useTemplate = false
     } = req.body;
@@ -931,16 +962,16 @@ const createActivityWithTemplate = async (req, res) => {
 
     // Validation
     if (!title || !description) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Title and description are required' 
+      return res.status(400).json({
+        success: false,
+        message: 'Title and description are required'
       });
     }
 
     if (!['daily_reflection', 'mood_checking', 'challenge', 'meditation', 'exercise', 'journaling'].includes(activityType)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Invalid activity type' 
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid activity type'
       });
     }
 
@@ -948,11 +979,11 @@ const createActivityWithTemplate = async (req, res) => {
     validateActivityData({ activityType, duration, startDate, endDate });
 
     const template = getActivityTemplate(activityType);
-    
+
     // Use template data if requested
     let finalInstructions = instructions;
     let finalResources = resources;
-    
+
     if (useTemplate && template) {
       if (!instructions || instructions.length === 0) {
         finalInstructions = template.defaultInstructions;
@@ -1005,11 +1036,11 @@ const createActivityWithTemplate = async (req, res) => {
     // Notify users in the activity's community
     const users = await userModel.find({ community: activity.communityId }, 'name email');
     await sendActivityNotifications(users, counsellor, activity, false);
-    
+
     console.log('Activity created successfully:', activity._id);
-    
-    res.status(201).json({ 
-      success: true, 
+
+    res.status(201).json({
+      success: true,
       activity,
       template: template ? {
         name: template.name,
@@ -1020,8 +1051,8 @@ const createActivityWithTemplate = async (req, res) => {
     });
   } catch (error) {
     console.error('Create activity error:', error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: error.message || 'Failed to create activity'
     });
   }
@@ -1109,30 +1140,30 @@ const updateActivity = async (req, res) => {
     ).populate('createdBy', 'name');
 
     if (!activity) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Activity not found or unauthorized' 
+      return res.status(404).json({
+        success: false,
+        message: 'Activity not found or unauthorized'
       });
     }
 
-  const counsellor = await counsellorModel.findById(counId, 'name email');
+    const counsellor = await counsellorModel.findById(counId, 'name email');
 
-// Populate participants so we have their emails
-await activity.populate('participants', 'name email');
-await sendActivityNotifications(activity.participants, counsellor, activity, true);
+    // Populate participants so we have their emails
+    await activity.populate('participants', 'name email');
+    await sendActivityNotifications(activity.participants, counsellor, activity, true);
 
 
     console.log('Activity updated successfully:', activity._id);
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       activity,
       message: 'Activity updated successfully'
     });
   } catch (error) {
     console.error('Update activity error:', error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: error.message || 'Failed to update activity'
     });
   }
@@ -1146,17 +1177,17 @@ const getParticipants = async (req, res) => {
 
     console.log('Getting participants for activity:', activityId);
 
-    const activity = await WellnessActivity.findOne({ 
-      _id: activityId, 
-      createdBy: counId 
+    const activity = await WellnessActivity.findOne({
+      _id: activityId,
+      createdBy: counId
     })
       .populate('participants', 'name email image')
       .populate('completions.user', 'name email image');
 
     if (!activity) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Activity not found or unauthorized' 
+      return res.status(404).json({
+        success: false,
+        message: 'Activity not found or unauthorized'
       });
     }
 
@@ -1174,8 +1205,8 @@ const getParticipants = async (req, res) => {
     });
   } catch (error) {
     console.error('Get participants error:', error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: error.message || 'Failed to get participants'
     });
   }
@@ -1190,33 +1221,33 @@ const reportContent = async (req, res) => {
     console.log('Counsellor reporting content:', { contentType, contentId, reason });
 
     if (!contentType || !contentId || !reason) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Content type, content ID, and reason are required' 
+      return res.status(400).json({
+        success: false,
+        message: 'Content type, content ID, and reason are required'
       });
     }
 
     // Validate content type
     if (!['post', 'comment', 'user'].includes(contentType)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Invalid content type' 
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid content type'
       });
     }
 
     // Validate reason
     const validReasons = ['harassment', 'hate_speech', 'spam', 'inappropriate_content', 'crisis_concern', 'misinformation', 'other'];
     if (!validReasons.includes(reason)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Invalid report reason' 
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid report reason'
       });
     }
 
     const report = new Report({
       reporter: counId,
-      reportedContent: { 
-        contentType, 
+      reportedContent: {
+        contentType,
         contentId: new mongoose.Types.ObjectId(contentId)
       },
       reason,
@@ -1225,18 +1256,18 @@ const reportContent = async (req, res) => {
     });
 
     await report.save();
-    
+
     console.log('Report submitted successfully:', report._id);
-    
-    res.status(201).json({ 
-      success: true, 
+
+    res.status(201).json({
+      success: true,
       message: 'Report submitted successfully',
       reportId: report._id
     });
   } catch (error) {
     console.error('Report content error:', error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: error.message || 'Failed to submit report'
     });
   }
@@ -1251,9 +1282,9 @@ const getReports = async (req, res) => {
 
     const validStatuses = ['pending', 'reviewed', 'resolved', 'dismissed'];
     if (!validStatuses.includes(status)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Invalid status filter' 
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid status filter'
       });
     }
 
@@ -1268,8 +1299,8 @@ const getReports = async (req, res) => {
 
     console.log(`Found ${reports.length} reports out of ${totalReports} total`);
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       reports: reports || [],
       pagination: {
         currentPage: parseInt(page),
@@ -1280,8 +1311,8 @@ const getReports = async (req, res) => {
     });
   } catch (error) {
     console.error('Get reports error:', error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: error.message || 'Failed to get reports'
     });
   }
@@ -1297,18 +1328,18 @@ const reviewReport = async (req, res) => {
     console.log('Reviewing report:', reportId, 'action:', actionTaken);
 
     if (!actionTaken) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Action taken is required' 
+      return res.status(400).json({
+        success: false,
+        message: 'Action taken is required'
       });
     }
 
     // Validate action
     const validActions = ['none', 'warning', 'content_removed', 'user_suspended', 'escalated'];
     if (!validActions.includes(actionTaken)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Invalid action type' 
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid action type'
       });
     }
 
@@ -1322,27 +1353,27 @@ const reviewReport = async (req, res) => {
       },
       { new: true }
     )
-    .populate('reporter', 'name email')
-    .populate('reviewedBy', 'name');
+      .populate('reporter', 'name email')
+      .populate('reviewedBy', 'name');
 
     if (!report) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Report not found' 
+      return res.status(404).json({
+        success: false,
+        message: 'Report not found'
       });
     }
 
     console.log('Report reviewed successfully:', report._id);
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       report,
       message: 'Report reviewed successfully'
     });
   } catch (error) {
     console.error('Review report error:', error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: error.message || 'Failed to review report'
     });
   }
@@ -1363,9 +1394,9 @@ const getCounsellorChatRooms = async (req, res) => {
     const chatRooms = await ChatRoom.find()
       .populate({
         path: "program",
-        match: { 
+        match: {
           $or: [
-            { counselors: counId }, 
+            { counselors: counId },
             { assignedCounselor: counId }
           ]
         },
@@ -1395,10 +1426,10 @@ const getCounsellorChatRooms = async (req, res) => {
     res.json({ success: true, chatRooms: response });
   } catch (err) {
     console.error("Fetch counsellor chat rooms error:", err);
-    res.status(500).json({ 
-      success: false, 
-      message: "Error fetching chat rooms", 
-      error: err.message 
+    res.status(500).json({
+      success: false,
+      message: "Error fetching chat rooms",
+      error: err.message
     });
   }
 };
@@ -1407,7 +1438,7 @@ const getCounsellorChatRooms = async (req, res) => {
 const getChatRoomDetails = async (req, res) => {
   try {
     const { roomId } = req.params;
-    const counId = req.counId; 
+    const counId = req.counId;
 
     if (!counId) {
       return res.status(401).json({ success: false, message: "Authentication failed" });
@@ -1435,8 +1466,8 @@ const getChatRoomDetails = async (req, res) => {
     const assignedCounselorId = room.program?.assignedCounselor?.toString();
     const currentCounselorId = counId.toString();
 
-    const hasAccess = counselorIds.includes(currentCounselorId) || 
-                     assignedCounselorId === currentCounselorId;
+    const hasAccess = counselorIds.includes(currentCounselorId) ||
+      assignedCounselorId === currentCounselorId;
 
     // Debug logging
     console.log("Access check debug:", {
@@ -1447,9 +1478,9 @@ const getChatRoomDetails = async (req, res) => {
     });
 
     if (!hasAccess) {
-      return res.status(403).json({ 
-        success: false, 
-        message: "Access denied. You are not assigned to this program." 
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. You are not assigned to this program."
       });
     }
 
@@ -1464,10 +1495,10 @@ const getChatRoomDetails = async (req, res) => {
     res.json({ success: true, room });
   } catch (err) {
     console.error("Fetch room details error:", err);
-    res.status(500).json({ 
-      success: false, 
-      message: "Error fetching room details", 
-      error: err.message 
+    res.status(500).json({
+      success: false,
+      message: "Error fetching room details",
+      error: err.message
     });
   }
 };
@@ -1487,21 +1518,21 @@ const startSession = async (req, res) => {
     }
 
     // Check access
-    const hasAccess = room.program?.counselors?.includes(counId) || 
-                     room.program?.assignedCounselor?.toString() === counId.toString();
+    const hasAccess = room.program?.counselors?.includes(counId) ||
+      room.program?.assignedCounselor?.toString() === counId.toString();
 
     if (!hasAccess) {
-      return res.status(403).json({ 
-        success: false, 
-        message: "Access denied. You are not assigned to this program." 
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. You are not assigned to this program."
       });
     }
 
     // Check if session is already active
     if (room.activeSession?.isActive) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "A session is already active in this room" 
+      return res.status(400).json({
+        success: false,
+        message: "A session is already active in this room"
       });
     }
 
@@ -1525,17 +1556,17 @@ const startSession = async (req, res) => {
 
     await room.save();
 
-    res.json({ 
-      success: true, 
-      message: "Session started successfully", 
-      session: room.activeSession 
+    res.json({
+      success: true,
+      message: "Session started successfully",
+      session: room.activeSession
     });
   } catch (err) {
     console.error("Start session error:", err);
-    res.status(500).json({ 
-      success: false, 
-      message: "Error starting session", 
-      error: err.message 
+    res.status(500).json({
+      success: false,
+      message: "Error starting session",
+      error: err.message
     });
   }
 };
@@ -1555,21 +1586,21 @@ const endSession = async (req, res) => {
     }
 
     // Check access
-    const hasAccess = room.program?.counselors?.includes(counId) || 
-                     room.program?.assignedCounselor?.toString() === counId.toString();
+    const hasAccess = room.program?.counselors?.includes(counId) ||
+      room.program?.assignedCounselor?.toString() === counId.toString();
 
     if (!hasAccess) {
-      return res.status(403).json({ 
-        success: false, 
-        message: "Access denied" 
+      return res.status(403).json({
+        success: false,
+        message: "Access denied"
       });
     }
 
     // Check if session is active
     if (!room.activeSession?.isActive) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "No active session to end" 
+      return res.status(400).json({
+        success: false,
+        message: "No active session to end"
       });
     }
 
@@ -1589,17 +1620,17 @@ const endSession = async (req, res) => {
 
     await room.save();
 
-    res.json({ 
-      success: true, 
-      message: "Session ended successfully", 
-      session: room.activeSession 
+    res.json({
+      success: true,
+      message: "Session ended successfully",
+      session: room.activeSession
     });
   } catch (err) {
     console.error("End session error:", err);
-    res.status(500).json({ 
-      success: false, 
-      message: "Error ending session", 
-      error: err.message 
+    res.status(500).json({
+      success: false,
+      message: "Error ending session",
+      error: err.message
     });
   }
 };
@@ -1619,8 +1650,8 @@ const muteUser = async (req, res) => {
     }
 
     // Check access
-    const hasAccess = room.program?.counselors?.includes(counId) || 
-                     room.program?.assignedCounselor?.toString() === counId.toString();
+    const hasAccess = room.program?.counselors?.includes(counId) ||
+      room.program?.assignedCounselor?.toString() === counId.toString();
 
     if (!hasAccess) {
       return res.status(403).json({ success: false, message: "Access denied" });
@@ -1635,7 +1666,7 @@ const muteUser = async (req, res) => {
     // Mute the user
     member.isMuted = true;
     member.mutedBy = counId;
-    
+
     if (duration) {
       member.mutedUntil = new Date(Date.now() + (duration * 60 * 1000));
     }
@@ -1659,16 +1690,16 @@ const muteUser = async (req, res) => {
 
     await room.save();
 
-    res.json({ 
-      success: true, 
-      message: `User muted successfully${duration ? ` for ${duration} minutes` : ''}` 
+    res.json({
+      success: true,
+      message: `User muted successfully${duration ? ` for ${duration} minutes` : ''}`
     });
   } catch (err) {
     console.error("Mute user error:", err);
-    res.status(500).json({ 
-      success: false, 
-      message: "Error muting user", 
-      error: err.message 
+    res.status(500).json({
+      success: false,
+      message: "Error muting user",
+      error: err.message
     });
   }
 };
@@ -1687,8 +1718,8 @@ const unmuteUser = async (req, res) => {
     }
 
     // Check access
-    const hasAccess = room.program?.counselors?.includes(counId) || 
-                     room.program?.assignedCounselor?.toString() === counId.toString();
+    const hasAccess = room.program?.counselors?.includes(counId) ||
+      room.program?.assignedCounselor?.toString() === counId.toString();
 
     if (!hasAccess) {
       return res.status(403).json({ success: false, message: "Access denied" });
@@ -1715,16 +1746,16 @@ const unmuteUser = async (req, res) => {
 
     await room.save();
 
-    res.json({ 
-      success: true, 
-      message: "User unmuted successfully" 
+    res.json({
+      success: true,
+      message: "User unmuted successfully"
     });
   } catch (err) {
     console.error("Unmute user error:", err);
-    res.status(500).json({ 
-      success: false, 
-      message: "Error unmuting user", 
-      error: err.message 
+    res.status(500).json({
+      success: false,
+      message: "Error unmuting user",
+      error: err.message
     });
   }
 };
@@ -1744,8 +1775,8 @@ const removeUser = async (req, res) => {
     }
 
     // Check access
-    const hasAccess = room.program?.counselors?.includes(counId) || 
-                     room.program?.assignedCounselor?.toString() === counId.toString();
+    const hasAccess = room.program?.counselors?.includes(counId) ||
+      room.program?.assignedCounselor?.toString() === counId.toString();
 
     if (!hasAccess) {
       return res.status(403).json({ success: false, message: "Access denied" });
@@ -1768,17 +1799,17 @@ const removeUser = async (req, res) => {
 
     await room.save();
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: "User removed successfully",
-      roomId: room._id 
+      roomId: room._id
     });
   } catch (err) {
     console.error("Remove user error:", err);
-    res.status(500).json({ 
-      success: false, 
-      message: "Error removing user", 
-      error: err.message 
+    res.status(500).json({
+      success: false,
+      message: "Error removing user",
+      error: err.message
     });
   }
 };
@@ -1802,8 +1833,8 @@ const sendCounsellorMessage = async (req, res) => {
     }
 
     // Check access
-    const hasAccess = room.program?.counselors?.includes(counId) || 
-                     room.program?.assignedCounselor?.toString() === counId.toString();
+    const hasAccess = room.program?.counselors?.includes(counId) ||
+      room.program?.assignedCounselor?.toString() === counId.toString();
 
     if (!hasAccess) {
       return res.status(403).json({ success: false, message: "Access denied" });
@@ -1811,21 +1842,21 @@ const sendCounsellorMessage = async (req, res) => {
 
     // Use the ChatRoom method to send message
     const message = await room.sendMessage(
-      counId, 
-      content.trim(), 
-      messageType || 'text', 
+      counId,
+      content.trim(),
+      messageType || 'text',
       'counselor'
     );
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: "Message sent successfully",
       messageData: message
     });
   } catch (err) {
     console.error("Send counselor message error:", err);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: err.message || "Error sending message"
     });
   }
@@ -1851,8 +1882,8 @@ const getChatRoomMessages = async (req, res) => {
     }
 
     // Check access
-    const hasAccess = room.program?.counselors?.includes(counId) || 
-                     room.program?.assignedCounselor?.toString() === counId.toString();
+    const hasAccess = room.program?.counselors?.includes(counId) ||
+      room.program?.assignedCounselor?.toString() === counId.toString();
 
     if (!hasAccess) {
       return res.status(403).json({ success: false, message: "Access denied" });
@@ -1861,13 +1892,13 @@ const getChatRoomMessages = async (req, res) => {
     // Paginate messages (get latest first)
     const startIndex = Math.max(0, room.messages.length - (page * limit));
     const endIndex = room.messages.length - ((page - 1) * limit);
-    
+
     const messages = room.messages
       .slice(startIndex, endIndex)
       .reverse(); // Show newest first
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       messages,
       pagination: {
         currentPage: parseInt(page),
@@ -1877,15 +1908,15 @@ const getChatRoomMessages = async (req, res) => {
     });
   } catch (err) {
     console.error("Get messages error:", err);
-    res.status(500).json({ 
-      success: false, 
-      message: "Error fetching messages", 
-      error: err.message 
+    res.status(500).json({
+      success: false,
+      message: "Error fetching messages",
+      error: err.message
     });
   }
 };
 
-// Update room settings (counselor only)
+// Update room settings 
 const updateRoomSettings = async (req, res) => {
   try {
     const { roomId } = req.params;
@@ -1900,8 +1931,8 @@ const updateRoomSettings = async (req, res) => {
     }
 
     // Check access
-    const hasAccess = room.program?.counselors?.includes(counId) || 
-                     room.program?.assignedCounselor?.toString() === counId.toString();
+    const hasAccess = room.program?.counselors?.includes(counId) ||
+      room.program?.assignedCounselor?.toString() === counId.toString();
 
     if (!hasAccess) {
       return res.status(403).json({ success: false, message: "Access denied" });
@@ -1914,17 +1945,17 @@ const updateRoomSettings = async (req, res) => {
 
     await room.save();
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: "Room settings updated successfully",
       settings: room.settings
     });
   } catch (err) {
     console.error("Update room settings error:", err);
-    res.status(500).json({ 
-      success: false, 
-      message: "Error updating room settings", 
-      error: err.message 
+    res.status(500).json({
+      success: false,
+      message: "Error updating room settings",
+      error: err.message
     });
   }
 };
@@ -1949,18 +1980,18 @@ export {
   updateSessionStatus,
   startCall,
   scheduleSession,
-  joinSession, 
+  joinSession,
   createActivityWithTemplate,
   getParticipants,
   getReports,
   reportContent,
   updateActivity,
-  reviewReport, 
+  reviewReport,
   getActivities,
   createInAppNotification,
   sendRealTimeNotification,
   getActivityTemplates,
   getTemplateDetails,
-  removeUser, endSession, muteUser,startSession, getCounsellorChatRooms,
-  unmuteUser, getChatRoomDetails , sendCounsellorMessage, getChatRoomMessages, updateRoomSettings
+  removeUser, endSession, muteUser, startSession, getCounsellorChatRooms,
+  unmuteUser, getChatRoomDetails, sendCounsellorMessage, getChatRoomMessages, updateRoomSettings
 };

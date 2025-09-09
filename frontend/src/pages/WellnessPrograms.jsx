@@ -162,7 +162,7 @@ const WellnessPrograms = () => {
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&h=1080&fit=crop&crop=center')`
+            backgroundImage: `url('https://media.istockphoto.com/id/2194272544/photo/biscayne-national-park-florida-usa-boardwalk.webp?a=1&b=1&s=612x612&w=0&k=20&c=VHQk3inYlnAeHOywLeZk77qTcOtK1tB8LIVJGRl6XdE=')`
           }}
         >
           <div className="absolute inset-0 bg-gradient-to-b from-blue-900/80 via-blue-800/70 to-blue-900/90"></div>
@@ -259,7 +259,7 @@ const WellnessPrograms = () => {
                     </span>
                     <div className="flex items-center gap-1 text-yellow-400">
                       <Star className="w-4 h-4 fill-current" />
-                      <span className="text-sm text-gray-600">{program.rating || '4.8'}</span>
+                      <span>Rating: {program.rating.average} out of 5 based on {program.rating.count} reviews.</span>
                     </div>
                   </div>
 

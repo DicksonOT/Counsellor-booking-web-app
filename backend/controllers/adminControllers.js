@@ -12,23 +12,27 @@ import UserProgress from '../models/userProgressModel.js'
 import donationModel from '../models/donationModel.js'
 import ChatRoom from '../models/chatModel.js'
 
-// Add formatPath here
-const formatPath = (filePath) => {
-    if (!filePath) {
-        return null;
-    }
-    // If the path is already a full URL (e.g., from Cloudinary), return it as is.
-    if (filePath.startsWith('http')) {
-        return filePath;
-    }
 
-    // We use a ternary operator to prevent double slashes, e.g., 'http://localhost:4000//uploads...'
-    const baseUrl = process.env.BASE_URL.endsWith('/')
-        ? process.env.BASE_URL.slice(0, -1)
-        : process.env.BASE_URL;
+// api for admin login
+const loginAdmin = async (req, res) => {
+    try {
+        const { email, password } = req.body
 
-    return `${baseUrl}/${filePath}`;
-};
+        if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
+
+            const token = jwt.sign(email + password, process.env.JWT_SECRET)
+            res.json({ success: true, token })
+
+        } else {
+            res.json({ success: false, message: 'Invalid credentials' })
+        }
+
+
+    } catch (error) {
+        console.log(error)
+        res.json({ success: false, message: error.message })
+    }
+}
 
 //API for adding counsellor 
 const addCounsellor = async (req, res) => {
@@ -37,26 +41,21 @@ const addCounsellor = async (req, res) => {
         const { name, email, password, specialty, degree, experience, about, fees, location, gpcNumber } = req.body
         const imageFile = req.file
 
-        //  checking for all data to add to counsellor
         if (!name || !email || !password || !specialty || !degree || !experience || !about || !fees || !location || !imageFile) {
             return res.json({ success: false, message: 'Missing details' })
         }
 
-        //  validating email format
         if (!validator.isEmail(email)) {
             return res.json({ success: false, message: 'Please enter a valid email' })
         }
 
-        //  Validating strong password
         if (password.length < 8) {
             return res.json({ success: false, message: 'Please enter a strong Password' })
         }
 
-        // hashing counsellor password
         const salt = await bcrypt.genSalt(10)
         const hashedPassword = await bcrypt.hash(password, salt)
 
-        // upload image to cloudinary
         const imageUpload = await cloudinary.uploader.upload(imageFile.path, { resource_type: "image" })
         const imageURL = imageUpload.secure_url
 
@@ -127,7 +126,7 @@ const updateCounsellorStatus = async (req, res) => {
         <p>Dear ${updatedCounsellor.name},</p>
         <p>After careful review, we regret to inform you that your counsellor application has been <strong>rejected</strong>.</p>
         <p>If you believe this was an error or would like to reapply with updated credentials, please contact our support team.</p>
-        <p>Thank you for your interest in Quiet Place.</p>
+        <p>Thank you for your interest in joining Quiet Place.</p>
       `;
     }
 
@@ -147,27 +146,6 @@ const updateCounsellorStatus = async (req, res) => {
   }
 };
 
-// api for admin login
-const loginAdmin = async (req, res) => {
-    try {
-        const { email, password } = req.body
-
-        if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
-
-            const token = jwt.sign(email + password, process.env.JWT_SECRET)
-            res.json({ success: true, token })
-
-        } else {
-            res.json({ success: false, message: 'Invalid credentials' })
-        }
-
-
-    } catch (error) {
-        console.log(error)
-        res.json({ success: false, message: error.message })
-    }
-}
-
 // API to get all counsellors list
 const allCounsellors = async (req, res) => {
     try {
@@ -181,6 +159,7 @@ const allCounsellors = async (req, res) => {
 
     }
 }
+
 // API for changing counsellor availability
 const changeAvailability = async (req, res) => {
     try {
@@ -215,17 +194,16 @@ const adminDashboard = async (req, res) => {
         const appointments = await appointmentModel.find({})
         const donations = await donationModel.find({})
 
-        // Calculate appointment revenue (only paid appointments)
+        // Calculate appointment revenue
         const appointmentRevenue = appointments
             .filter(appointment => appointment.payment === true)
             .reduce((total, appointment) => total + appointment.amount, 0)
 
-        // Calculate donation revenue (only completed donations)
+        // Calculate donation revenue
         const donationRevenue = donations
             .filter(donation => donation.status === 'completed')
             .reduce((total, donation) => total + donation.amount, 0)
 
-        // Calculate total revenue
         const totalRevenue = appointmentRevenue + donationRevenue
 
         const dashboardData = {
@@ -291,22 +269,54 @@ const addProgram = async (req, res) => {
       instructor, 
       outcome, 
       features, 
-      price, 
-      thumbnail 
+      price 
     } = req.body;
 
-    // Validate required fields
     if (!title || !description || !category || !instructor || !outcome) {
       return res.status(400).json({
         success: false,
         message: "Missing required fields"
       });
     }
+  
+    let imageURL = "https://plus.unsplash.com/premium_photo-1673697239981-389164b7b87f?q=80&w=1144&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"; 
+    
+    if (req.file) {
+      try {
+        const imageFile = req.file;
+        const imageUpload = await cloudinary.uploader.upload(imageFile.path, { 
+          resource_type: "image",
+          folder: "wellness_programs", 
+          transformation: [
+            { width: 800, height: 600, crop: "fill" }, 
+            { quality: "auto" } 
+          ]
+        });
+        imageURL = imageUpload.secure_url;
+
+      } catch (error) {
+        console.error("Image upload failed:", error);
+        return res.status(400).json({
+          success: false,
+          message: "Image upload failed. Please try again."
+        });
+      }
+    }
 
     // Format duration to match schema
     const durationValue = parseInt(duration) || 0;
     const durationUnit = duration.includes('week') ? 'weeks' : 
                         duration.includes('month') ? 'months' : 'days';
+
+    // Parse features if it's a string
+    let parsedFeatures = [];
+    if (features) {
+      try {
+        parsedFeatures = typeof features === 'string' ? JSON.parse(features) : features;
+      } catch (error) {
+        parsedFeatures = Array.isArray(features) ? features : [features];
+      }
+    }
 
     // Save program
     const newProgram = new programModel({
@@ -316,8 +326,8 @@ const addProgram = async (req, res) => {
         value: durationValue,
         unit: durationUnit
       },
-      difficulty: difficulty || 'Beginner',
-      category: category || 'Personal Growth',
+      difficulty: difficulty,
+      category: category,
       instructor: {
         name: instructor,
         title: "",
@@ -326,19 +336,20 @@ const addProgram = async (req, res) => {
         credentials: []
       },
       outcome,
-      features: features || [],
+      features: parsedFeatures || [],
       price: price || 'Free',
-      thumbnail: thumbnail || "default-thumbnail.jpg",
+      thumbnail: imageURL,
       participants: 0,
       rating: {
         average: 0,
-        count: 0
+        count: 4
       }
     });
 
     await newProgram.save();
 
-        const users = await userModel.find({}, "email name");
+    // Send email notifications to users
+    const users = await userModel.find({}, "email name");
 
     if (users.length > 0) {
       const mailOptions = users.map(user => ({
@@ -347,9 +358,9 @@ const addProgram = async (req, res) => {
         subject: `New Wellness Program: ${newProgram.title}`,
         html: `
           <p>Hi ${user.name || "there"},</p>
-          <p>We’re excited to announce a new wellness program:</p>
+          <p>We're excited to announce a new wellness program:</p>
           <h2>${newProgram.title}</h2>
-          <p><b>Duration:</b> ${newProgram.duration} | <b>Difficulty:</b> ${newProgram.difficulty}</p>
+          <p><b>Duration:</b> ${newProgram.duration.value} ${newProgram.duration.unit} | <b>Difficulty:</b> ${newProgram.difficulty}</p>
           <p><b>Outcome:</b> ${newProgram.outcome}</p>
           <p>${newProgram.description}</p>
           <p>Click below to explore and enroll:</p>
@@ -362,7 +373,11 @@ const addProgram = async (req, res) => {
       }));
 
       // Send emails in bulk
-      await Promise.all(mailOptions.map(mail => transporter.sendMail(mail)));
+      try {
+        await Promise.all(mailOptions.map(mail => transporter.sendMail(mail)));
+      } catch (error) {
+        console.error("Email notification failed:", error);
+      }
     }
 
     res.json({ 
@@ -370,11 +385,11 @@ const addProgram = async (req, res) => {
       message: "Program added successfully", 
       program: newProgram 
     });
-  } catch (err) {
-    console.error("Error adding program:", err);
+  } catch (error) {
+    console.error("Error adding program:", error);
     res.status(500).json({ 
       success: false, 
-      message: err.message 
+      message: error.message 
     });
   }
 };
@@ -384,8 +399,8 @@ const getAllPrograms = async (req, res) => {
   try {
     const programs = await programModel.find({}).sort({ createdAt: -1 });
     res.json({ success: true, programs });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -393,7 +408,29 @@ const getAllPrograms = async (req, res) => {
 const updateProgram = async (req, res) => {
   try {
     const { id } = req.params;
-    const updateData = req.body;
+    const updateData = { ...req.body };
+
+    // Handle image upload for updates
+    if (req.file) {
+      try {
+        const imageFile = req.file;
+        const imageUpload = await cloudinary.uploader.upload(imageFile.path, { 
+          resource_type: "image",
+          folder: "wellness_programs",
+          transformation: [
+            { width: 800, height: 600, crop: "fill" },
+            { quality: "auto" }
+          ]
+        });
+        updateData.thumbnail = imageUpload.secure_url;
+      } catch (error) {
+        console.error("Image upload failed:", error);
+        return res.status(400).json({
+          success: false,
+          message: "Image upload failed. Please try again."
+        });
+      }
+    }
 
     // Handle duration conversion if provided
     if (updateData.duration) {
@@ -418,6 +455,19 @@ const updateProgram = async (req, res) => {
       };
     }
 
+    // Parse features if it's a string
+    if (updateData.features) {
+      try {
+        updateData.features = typeof updateData.features === 'string' 
+          ? JSON.parse(updateData.features) 
+          : updateData.features;
+      } catch (e) {
+        updateData.features = Array.isArray(updateData.features) 
+          ? updateData.features 
+          : [updateData.features];
+      }
+    }
+
     const updatedProgram = await programModel.findByIdAndUpdate(
       id,
       updateData,
@@ -436,11 +486,11 @@ const updateProgram = async (req, res) => {
       message: "Program updated successfully",
       program: updatedProgram
     });
-  } catch (err) {
-    console.error("Error updating program:", err);
+  } catch (error) {
+    console.error("Error updating program:", error);
     res.status(500).json({
       success: false,
-      message: err.message
+      message: error.message
     });
   }
 };
@@ -449,26 +499,39 @@ const updateProgram = async (req, res) => {
 const deleteProgram = async (req, res) => {
   try {
     const { id } = req.params;
-
-    // Find the program before deleting
+    
     const program = await programModel.findById(id);
     if (!program) {
-      return res.status(404).json({ success: false, message: "Program not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Program not found"
+      });
+    }
+ 
+    if (program.thumbnail && program.thumbnail !== "https://plus.unsplash.com/premium_photo-1673697239981-389164b7b87f?q=80&w=1144&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" && program.thumbnail.includes('cloudinary')) {
+      try {
+        // Extract public_id from Cloudinary URL
+        const urlParts = program.thumbnail.split('/');
+        const fileNameWithExt = urlParts[urlParts.length - 1];
+        const publicId = fileNameWithExt.split('.')[0];
+        await cloudinary.uploader.destroy(`wellness_programs/${publicId}`);
+      } catch (deleteImageError) {
+        console.error("Failed to delete image from Cloudinary:", deleteImageError);
+      }
     }
 
-    // Store program data for email notification
-    const deletedProgramData = { ...program.toObject() };
-
-    // Delete the program
     await programModel.findByIdAndDelete(id);
 
-    res.json({ 
-      success: true, 
-      message: "Program deleted successfully",
-      deletedProgram: deletedProgramData 
+    res.json({
+      success: true,
+      message: "Program deleted successfully"
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error("Error deleting program:", err);
+    res.status(500).json({
+      success: false,
+      message: err.message
+    });
   }
 };
 
@@ -500,7 +563,7 @@ const createCommunity = async (req, res) => {
       theme,
       rules: parsedRules,
       tags: parsedTags,
-      isPrivate: isPrivate === 'true', // Convert string to boolean
+      isPrivate: isPrivate === 'true',
       moderators: counIds,
       members: [userId],         
       memberCount: 1
@@ -510,10 +573,10 @@ const createCommunity = async (req, res) => {
     if (imageFile) {
       const imageUpload = await cloudinary.uploader.upload(imageFile.path, { 
         resource_type: 'image',
-        folder: 'community_images', // Optional: organize uploads in folders
+        folder: 'community_images', 
         transformation: [
-          { width: 400, height: 400, crop: 'fill' }, // Resize to square
-          { quality: 'auto' } // Optimize quality
+          { width: 400, height: 400, crop: 'fill' },
+          { quality: 'auto' } 
         ]
       });
       communityData.image = imageUpload.secure_url;
@@ -527,7 +590,7 @@ const createCommunity = async (req, res) => {
     await UserProgress.findOneAndUpdate(
       { user: userId },
       { 
-        $addToSet: { joinedCommunities: community._id }, // ✅ avoids duplicates
+        $addToSet: { joinedCommunities: community._id }, 
         $inc: { wellnessPoints: 10 }
       },
       { upsert: true, new: true }
@@ -625,7 +688,7 @@ const getDonations = async (req, res) => {
     
     const donations = await donationModel.find(query)
       .sort({ createdAt: -1 })
-      .limit(100); // Limit to prevent too much data
+      .limit(100); 
     
     res.json({
       success: true,
@@ -676,16 +739,14 @@ const getCounsellorsWithRevenue = async (req, res) => {
         const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
         const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
 
-        // Get all approved counsellors
         const counsellors = await counsellorModel.find({ status: 'approved' })
 
         // Calculate revenue for each counsellor
         const counsellorsWithRevenue = await Promise.all(
             counsellors.map(async (counsellor) => {
-                // Get appointments for this counsellor in current month (only paid ones)
                 const appointments = await appointmentModel.find({
                     counId: counsellor._id.toString(),
-                    payment: true, // Only paid appointments
+                    payment: true,
                     date: {
                         $gte: currentMonthStart.getTime(),
                         $lte: currentMonthEnd.getTime()
@@ -1051,53 +1112,6 @@ const unassignCounsellor = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
-
-// Don't forget to add this route to your admin router:
-// adminRouter.delete('/chat/:roomId/unassign-counsellor/:counId', authAdmin, unassignCounsellor);
-// Reset user progress (admin function)
-// const resetUserProgress = async (req, res) => {
-//   const { userId } = req.params;
-//   const { resetType = 'partial', adminId } = req.body; // 'partial' or 'complete'
-
-//   try {
-//     const progress = await UserProgress.findOne({ user: userId });
-//     if (!progress) {
-//       return res.json({ success: false, message: 'User progress not found' });
-//     }
-
-//     if (resetType === 'complete') {
-//       // Complete reset - remove all data
-//       await UserProgress.findOneAndDelete({ user: userId });
-//       res.json({ success: true, message: 'User progress completely reset' });
-//     } else {
-//       // Partial reset - keep history but reset current scores
-//       progress.scoreHistory.push({
-//         score: 0,
-//         source: 'manual',
-//         notes: `Progress reset by admin: ${adminId}`,
-//         date: new Date()
-//       });
-
-//       progress.wellnessPoints = 0;
-//       progress.totalScore = 0;
-//       progress.monthlyStats = {
-//         currentMonth: new Date().getMonth(),
-//         currentYear: new Date().getFullYear(),
-//         pointsThisMonth: 0,
-//         activitiesThisMonth: 0,
-//         postsThisMonth: 0,
-//         supportGivenThisMonth: 0
-//       };
-
-//       await progress.save();
-//       res.json({ success: true, message: 'User progress partially reset' });
-//     }
-//   } catch (error) {
-//     console.error(error);
-//     res.json({ success: false, message: 'Error resetting user progress' });
-//   }
-// };
-
 
 export { addCounsellor, loginAdmin, 
           allCounsellors, getAllAppointments, 

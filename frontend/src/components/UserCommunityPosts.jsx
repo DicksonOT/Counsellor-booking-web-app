@@ -13,7 +13,7 @@ const CommunityPosts = ({ communityId, communityName }) => {
     const [submittingComment, setSubmittingComment] = useState({});
     const [loadingComments, setLoadingComments] = useState({});
     const [postComments, setPostComments] = useState({});
-    
+
     // New states for post creation
     const [showCreatePost, setShowCreatePost] = useState(false);
     const [newPost, setNewPost] = useState({
@@ -103,7 +103,7 @@ const CommunityPosts = ({ communityId, communityName }) => {
             if (data.success) {
                 // Add the new post to the beginning of the posts array
                 setPosts(prevPosts => [data.post, ...prevPosts]);
-                
+
                 // Reset form
                 setNewPost({
                     title: '',
@@ -115,7 +115,7 @@ const CommunityPosts = ({ communityId, communityName }) => {
                     supportLevel: 'low'
                 });
                 setShowCreatePost(false);
-                
+
                 toast.success('Post created successfully!');
             } else {
                 toast.error(data.message || 'Failed to create post');
@@ -139,18 +139,18 @@ const CommunityPosts = ({ communityId, communityName }) => {
 
             if (data.success) {
                 // Update the post in the local state
-                setPosts(prevPosts => 
-                    prevPosts.map(post => 
-                        post._id === postId 
-                            ? { 
-                                ...post, 
+                setPosts(prevPosts =>
+                    prevPosts.map(post =>
+                        post._id === postId
+                            ? {
+                                ...post,
                                 likeCount: data.likeCount,
-                                isLiked: data.liked 
-                              }
+                                isLiked: data.liked
+                            }
                             : post
                     )
                 );
-                
+
                 toast.success(data.message);
             } else {
                 toast.error(data.message || 'Failed to update like status');
@@ -164,10 +164,10 @@ const CommunityPosts = ({ communityId, communityName }) => {
     // Fetch comments for a post
     const fetchComments = async (postId) => {
         if (loadingComments[postId]) return;
-        
+
         try {
             setLoadingComments(prev => ({ ...prev, [postId]: true }));
-            
+
             const { data } = await axios.get(
                 `${backendUrl}/api/user/posts/${postId}/comments`,
                 { headers: { token } }
@@ -198,7 +198,7 @@ const CommunityPosts = ({ communityId, communityName }) => {
 
         try {
             setSubmittingComment(prev => ({ ...prev, [postId]: true }));
-            
+
             const { data } = await axios.post(
                 `${backendUrl}/api/user/posts/${postId}/comments`,
                 { content },
@@ -213,9 +213,9 @@ const CommunityPosts = ({ communityId, communityName }) => {
                 }));
 
                 // Update post comment count
-                setPosts(prevPosts => 
-                    prevPosts.map(post => 
-                        post._id === postId 
+                setPosts(prevPosts =>
+                    prevPosts.map(post =>
+                        post._id === postId
                             ? { ...post, commentCount: (post.commentCount || 0) + 1 }
                             : post
                     )
@@ -238,9 +238,9 @@ const CommunityPosts = ({ communityId, communityName }) => {
     // Toggle comments visibility
     const toggleComments = async (postId) => {
         const isCurrentlyShown = showComments[postId];
-        
+
         setShowComments(prev => ({ ...prev, [postId]: !isCurrentlyShown }));
-        
+
         // If showing comments and we haven't loaded them yet, fetch them
         if (!isCurrentlyShown && !postComments[postId]) {
             await fetchComments(postId);
@@ -285,7 +285,7 @@ const CommunityPosts = ({ communityId, communityName }) => {
                     </div>
                     <p className="text-red-600 text-lg">Error loading posts</p>
                     <p className="text-gray-500 text-sm mt-1">{error}</p>
-                    <button 
+                    <button
                         onClick={fetchCommunityPosts}
                         className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                     >
@@ -302,7 +302,7 @@ const CommunityPosts = ({ communityId, communityName }) => {
                 <h2 className="text-2xl font-bold text-gray-800">
                     {communityName || 'Community'} Posts ({posts.length})
                 </h2>
-                <button 
+                <button
                     onClick={() => setShowCreatePost(true)}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                 >
@@ -316,7 +316,7 @@ const CommunityPosts = ({ communityId, communityName }) => {
                     <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-screen overflow-y-auto">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-xl font-bold text-gray-800">Create New Post</h3>
-                            <button 
+                            <button
                                 onClick={() => setShowCreatePost(false)}
                                 className="text-gray-500 hover:text-gray-700"
                             >
@@ -453,9 +453,13 @@ const CommunityPosts = ({ communityId, communityName }) => {
                             <div className="flex items-start justify-between mb-3">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 flex items-center justify-center">
-                                        <img className="text-blue-600 font-semibold rounded-full"
-                                            src= {post.author?.image || 'U'}
-                                        />
+                                        {post.isAnonymous
+                                            ? <img className="text-blue-600 font-semibold rounded-full"
+                                                src={'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMwAAADACAMAAAB/Pny7AAAAA1BMVEUTOJ0gO3PxAAAAPUlEQVR4nO3BMQEAAADCoPVPbQ0PoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAvgyZwAABCrx9CgAAAABJRU5ErkJggg=='}
+                                            />
+                                            : <img className="text-blue-600 font-semibold rounded-full"
+                                                src={post.author?.image || 'U'}
+                                            />}
                                     </div>
                                     <div>
                                         <h4 className="font-semibold text-gray-800">
@@ -476,7 +480,7 @@ const CommunityPosts = ({ communityId, communityName }) => {
                             <h3 className="text-lg font-semibold text-gray-800 mb-2">
                                 {post.title}
                             </h3>
-                            
+
                             <div className="text-gray-700 mb-4 whitespace-pre-wrap">
                                 {post.content}
                             </div>
@@ -493,24 +497,23 @@ const CommunityPosts = ({ communityId, communityName }) => {
                             )}
 
                             <div className="flex items-center gap-6 text-sm text-gray-500">
-                                <button 
+                                <button
                                     onClick={() => handleLikePost(post._id)}
-                                    className={`flex items-center gap-2 transition-colors ${
-                                        post.isLiked ? 'text-blue-500' : 'hover:blue-red-500'
-                                    }`}
+                                    className={`flex items-center gap-2 transition-colors ${post.isLiked ? 'text-blue-500' : 'hover:blue-red-500'
+                                        }`}
                                 >
-                                    <svg 
-                                        className={`w-4 h-4 ${post.isLiked ? 'fill-current' : ''}`} 
-                                        fill={post.isLiked ? 'currentColor' : 'none'} 
-                                        stroke="currentColor" 
+                                    <svg
+                                        className={`w-4 h-4 ${post.isLiked ? 'fill-current' : ''}`}
+                                        fill={post.isLiked ? 'currentColor' : 'none'}
+                                        stroke="currentColor"
                                         viewBox="0 0 24 24"
                                     >
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                                     </svg>
                                     {post.likeCount || post.likes?.length || 0}
                                 </button>
-                                
-                                <button 
+
+                                <button
                                     onClick={() => toggleComments(post._id)}
                                     className="flex items-center gap-2 hover:text-blue-600 transition-colors"
                                 >
@@ -580,7 +583,7 @@ const CommunityPosts = ({ communityId, communityName }) => {
                                                             </span>
                                                         </div>
                                                         <p className="text-gray-700 text-sm whitespace-pre-wrap">{comment.content}</p>
-                                                        
+
                                                         {/* Replies */}
                                                         {comment.replies && comment.replies.length > 0 && (
                                                             <div className="mt-3 pl-4 border-l-2 border-gray-200 space-y-2">

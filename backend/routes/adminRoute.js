@@ -18,7 +18,7 @@ adminRouter.post('/change-availability', authAdmin, changeAvailability)
 adminRouter.get('/get-all-appointments', authAdmin, getAllAppointments)
 adminRouter.get('/dashboard', authAdmin, adminDashboard)
 
-adminRouter.post("/add-program", authAdmin, addProgram);
+adminRouter.post("/add-program", authAdmin,upload.single('image'), addProgram);
 adminRouter.get("/programs", authAdmin, getAllPrograms);
 adminRouter.put("/update-program/:id", authAdmin, updateProgram);
 adminRouter.delete("/delete-program/:id", authAdmin, deleteProgram);
@@ -30,7 +30,7 @@ adminRouter.get('/donations', authAdmin, getDonations);
 adminRouter.get('/export-donations', authAdmin, exportDonations);
 
 adminRouter.get('/revenue-overview', authAdmin, getCounsellorsWithRevenue)
-adminRouter.get('/revenue/:counsellorId', authAdmin, getCounsellorRevenue)
+adminRouter.get('/revenue/:counId', authAdmin, getCounsellorRevenue)
 
 // chat management routes
 adminRouter.get("/chat-rooms", authAdmin, getAllChatRooms);
