@@ -16,6 +16,7 @@ const LoginPage = () => {
     event.preventDefault();
     try {
       if (state === 'Sign up'){
+        console.log(`Sending Request to ${backendUrl}/api/user/register`)
         const {data} = await  axios.post(`${backendUrl}/api/user/register`, {name, email, password})
 
         if(data.success){

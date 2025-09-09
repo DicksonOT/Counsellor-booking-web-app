@@ -21,6 +21,8 @@ const AppContextProvider = (props) => {
     const public_key = import.meta.env.VITE_PUBLIC_KEY
     const currencySymbol = 'USD '
 
+    console.log("Backend Url:", backendUrl)
+
     const getUserInfo = async () => {
         try {
             const { data } = await axios.get(`${backendUrl}/api/user/info`, { headers: { token } })
