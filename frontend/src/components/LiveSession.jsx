@@ -32,7 +32,8 @@ const TherapySession = () => {
       await getUserMedia();
       initPeerConnection();
 
-      const wsUrl = `${import.meta.env.VITE_WS_BASE_URL || "ws://localhost:4000"}/sessions/user/${roomId}`;
+      const wsUrl = `wss://counsellor-booking-web-app-1.onrender.com/sessions/user/${roomId}`;
+      console.log("Connecting to WebSocket:", wsUrl)
       socketRef.current = new WebSocket(wsUrl);
 
       socketRef.current.onopen = () => {
